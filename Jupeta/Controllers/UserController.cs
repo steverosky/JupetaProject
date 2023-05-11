@@ -51,11 +51,11 @@ namespace Jupeta.Controllers
         [AllowAnonymous]
         [HttpPost]
         [Route("Login")]
-        public ActionResult Login([FromBody] UserLogin user)
+        public async Task<IActionResult> Login([FromBody] UserLogin user)
         {
             if (user is not null)
             {
-                var model = _db.Login(user);
+                var model = await _db.Login(user);
                 return Ok(model);
             }
             return BadRequest("InValid Operation");

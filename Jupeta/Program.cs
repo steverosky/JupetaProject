@@ -16,6 +16,12 @@ builder.Services.AddSingleton<IMongoDBSettings>(sp =>
 builder.Services.AddSingleton<IMongoClient>(s
     => new MongoClient(builder.Configuration.GetValue<string>("MongoDB:ConnectionURL")));
 
+//add CORS policy
+builder.Services.AddCors(options =>
+    options.AddPolicy("AllowAll", p => p.AllowAnyOrigin()
+    .AllowAnyMethod()
+    .AllowAnyHeader()));
+
 
 //add jwt authentication services to program
 builder.Services.AddAuthentication(options =>
@@ -62,6 +68,7 @@ if (app.Environment.IsDevelopment())
 }
 
 app.UseHttpsRedirection();
+app.UseCors("AllowAll");
 
 app.UseAuthorization();
 app.UseAuthentication();

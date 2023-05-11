@@ -1,5 +1,4 @@
 ﻿using Jupeta.Models;
-using Microsoft.AspNetCore.Http.HttpResults;
 using Microsoft.IdentityModel.Tokens;
 using MongoDB.Driver;
 using System.IdentityModel.Tokens.Jwt;
@@ -46,10 +45,9 @@ namespace Jupeta.Services
             return user;
         }
 
-        public string Login(UserLogin user)
+        public async Task<object> Login(UserLogin user)
         {
-            var dbUser = this._usersCollection.Find(x =>
-            x.Email == user.Email).FirstOrDefault();
+            var dbUser = await _usersCollection.Find(x => x.Email == user.Email).FirstOrDefaultAsync();
 
             if (dbUser != null)
             {
@@ -57,7 +55,12 @@ namespace Jupeta.Services
                 if (isPasswordValid)
                 {
                     string token = CreateToken(user);
-                    return token;
+                    return new TokenResponse
+                    {
+                        Email = user.Email, 
+                        Token = token 
+                    };
+
                 }
                 else
                 {
