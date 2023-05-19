@@ -4,6 +4,7 @@ using Microsoft.AspNetCore.Authentication.JwtBearer;
 using Microsoft.Extensions.Options;
 using Microsoft.IdentityModel.Tokens;
 using MongoDB.Driver;
+using Serilog;
 using System.Text;
 
 var builder = WebApplication.CreateBuilder(args);
@@ -52,6 +53,10 @@ builder.Services.AddAuthentication(options =>
 // Add services to the container.
 builder.Services.AddScoped<IMongoDBservices, MongoDBservices>();
 
+// setup serilog
+builder.Host.UseSerilog((context, configuration) =>
+    configuration.ReadFrom.Configuration(context.Configuration));
+
 
 builder.Services.AddControllers();
 // Learn more about configuring Swagger/OpenAPI at https://aka.ms/aspnetcore/swashbuckle
@@ -67,6 +72,7 @@ if (app.Environment.IsDevelopment())
     app.UseSwaggerUI();
 }
 
+app.UseSerilogRequestLogging();
 app.UseHttpsRedirection();
 app.UseCors("AllowAll");
 

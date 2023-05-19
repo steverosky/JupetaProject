@@ -12,11 +12,14 @@ namespace Jupeta.Controllers
     {
         private readonly IConfiguration _configuration;
         private readonly IMongoDBservices _db;
+        private readonly ILogger<UserController> _logger;
 
-        public UserController(IConfiguration config, IMongoDBservices db)
+        public UserController(IConfiguration config, IMongoDBservices db, ILogger<UserController> logger)
         {
             _configuration = config;
             _db = db;
+            _logger= logger;
+            _logger.LogInformation("User controller called ");
         }
 
         //[Authorize]
@@ -24,6 +27,7 @@ namespace Jupeta.Controllers
         [Route("GetAllUsers")]
         public ActionResult<List<UserReg>> GetUsers()
         {
+            _logger.LogInformation("Get all users method Starting.");
             return Ok(_db.GetUsers());
         }
 
@@ -33,6 +37,7 @@ namespace Jupeta.Controllers
         [Route("GetUserById")]
         public ActionResult<UserReg> GetUserById(string id)
         {
+            _logger.LogInformation("Get user by Id method Starting.");
             var user = _db.GetUser(id);
             return Ok(user);
         }
@@ -42,8 +47,11 @@ namespace Jupeta.Controllers
         [Route("AddUser")]
         public ActionResult<UserReg> Post([FromBody] UserReg user)
         {
+            _logger.LogInformation("Add user method Starting.");
             _db.AddUser(user);
+            _logger.LogWarning($"User {user.Email} created successfully");
             return CreatedAtAction(nameof(GetUserById), new {id = user.Id}, user);
+            
         }
 
 
@@ -53,6 +61,7 @@ namespace Jupeta.Controllers
         [Route("Login")]
         public async Task<IActionResult> Login([FromBody] UserLogin user)
         {
+            _logger.LogInformation("Login method Starting.");
             if (user is not null)
             {
                 var model = await _db.Login(user);
