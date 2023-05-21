@@ -10,18 +10,22 @@ namespace Jupeta.Services
     public class MongoDBservices : IMongoDBservices
     {
         private readonly IMongoCollection<UserReg> _usersCollection;
+        private readonly IMongoCollection<Products> _productsCollection;
         private readonly IConfiguration _config;
+        private readonly IHttpContextAccessor _httpContextAccessor;
 
-        public MongoDBservices(IMongoDBSettings mongoSettings, IConfiguration config, IMongoClient mongoClient)
+        public MongoDBservices(IMongoDBSettings mongoSettings, IConfiguration config, IMongoClient mongoClient,
+            IHttpContextAccessor httpContextAccessor)
         {
             //MongoClient client = new MongoClient(mongoSettings.ConnectionURI);
             var database = mongoClient.GetDatabase(mongoSettings.DatabaseName);
             _usersCollection = database.GetCollection<UserReg>(mongoSettings.CollectionName);
             _config = config;
+            _httpContextAccessor = httpContextAccessor;
         }
 
 
-
+        //Hash User password
         public static string CreatePasswordhash(string password)
         {
             if (password != null)
@@ -34,10 +38,13 @@ namespace Jupeta.Services
 
         }
 
+        //get all Users
         public List<UserReg> GetUsers() => _usersCollection.Find(user => true).ToList();
 
+        //Get User by Id
         public UserReg GetUser(string id) => _usersCollection.Find<UserReg>(user => user.Id == id).FirstOrDefault();
 
+        //Add new User
         public UserReg AddUser(UserReg user)
         {
             user.PasswordHash = CreatePasswordhash(user.PasswordHash);
@@ -45,6 +52,7 @@ namespace Jupeta.Services
             return user;
         }
 
+        //Login 
         public async Task<object> Login(UserLogin user)
         {
             var dbUser = await _usersCollection.Find(x => x.Email == user.Email).FirstOrDefaultAsync();
@@ -71,7 +79,7 @@ namespace Jupeta.Services
         }
 
 
-
+        //Create Token for authentication
         public string CreateToken(UserLogin user)
         {
             List<Claim> claims = new List<Claim>()
@@ -95,5 +103,12 @@ namespace Jupeta.Services
             var jwt = new JwtSecurityTokenHandler().WriteToken(token);
             return jwt;
         }
+
+        //add new products
+        public async Task<object> AddProdcut(Products product)
+        {
+            
+        }
+
     }
 }
