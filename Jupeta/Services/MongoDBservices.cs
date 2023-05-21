@@ -107,7 +107,8 @@ namespace Jupeta.Services
         //add new products
         public async Task<object> AddProdcut(Products product)
         {
-            
+            var roleclaim = _httpContextAccessor.HttpContext.User.FindFirst(ClaimTypes.Role).Value;
+
         }
 
     }
