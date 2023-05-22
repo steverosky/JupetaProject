@@ -19,7 +19,8 @@ namespace Jupeta.Services
         {
             //MongoClient client = new MongoClient(mongoSettings.ConnectionURI);
             var database = mongoClient.GetDatabase(mongoSettings.DatabaseName);
-            _usersCollection = database.GetCollection<UserReg>(mongoSettings.CollectionName);
+            _usersCollection = database.GetCollection<UserReg>("users");
+            _productsCollection = database.GetCollection<Products>("products");
             _config = config;
             _httpContextAccessor = httpContextAccessor;
         }
@@ -105,10 +106,15 @@ namespace Jupeta.Services
         }
 
         //add new products
-        public async Task<object> AddProdcut(Products product)
+        public Products AddProdcut(Products product)
         {
-            
+             _productsCollection.InsertOne(product);
+            return product;
         }
+
+
+        //get product by id
+        public Products GetProductById(string id) => _productsCollection.Find<Products>(product => product.Id == id).FirstOrDefault();
 
     }
 }
