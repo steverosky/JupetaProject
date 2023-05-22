@@ -45,7 +45,7 @@ namespace Jupeta.Controllers
         //[Authorize]
         [HttpPost]
         [Route("AddUser")]
-        public ActionResult<UserReg> Post([FromBody] UserReg user)
+        public ActionResult<UserReg> AddNewUser([FromBody] UserReg user)
         {
             _logger.LogInformation("Add user method Starting.");
             _db.AddUser(user);
@@ -68,6 +68,28 @@ namespace Jupeta.Controllers
                 return Ok(model);
             }
             return BadRequest("InValid Operation");
+        }
+
+
+        [HttpGet]
+        [Route("GetProductById")]
+        public ActionResult<UserReg> GetProductById(string id)
+        {
+            _logger.LogInformation("Get product by Id method Starting.");
+            var product = _db.GetProductById(id);
+            return Ok(product);
+        }
+
+
+        [HttpPost]
+        [Route("AddProduct")]
+        public ActionResult<Products> AddNewProduct([FromBody] Products product)
+        {
+            _logger.LogInformation("Add product method Starting.");
+            _db.AddProdcut(product);
+            _logger.LogWarning($"product {product.ProductName} created successfully");
+            return CreatedAtAction(nameof(GetProductById), new { id = product.Id }, product);
+
         }
     }
 }
