@@ -1,4 +1,6 @@
-﻿using Jupeta.Models;
+﻿using Jupeta.Models.DBModels;
+using Jupeta.Models.RequestModels;
+using Jupeta.Models.ResponseModels;
 using Microsoft.IdentityModel.Tokens;
 using MongoDB.Driver;
 using System.IdentityModel.Tokens.Jwt;
@@ -9,8 +11,8 @@ namespace Jupeta.Services
 {
     public class MongoDBservices : IMongoDBservices
     {
-        private readonly IMongoCollection<UserReg> _usersCollection;
-        private readonly IMongoCollection<Products> _productsCollection;
+        private readonly IMongoCollection<UserReg> _users;
+        private readonly IMongoCollection<Products> _products;
         private readonly IConfiguration _config;
         private readonly IHttpContextAccessor _httpContextAccessor;
 
@@ -19,8 +21,8 @@ namespace Jupeta.Services
         {
             //MongoClient client = new MongoClient(mongoSettings.ConnectionURI);
             var database = mongoClient.GetDatabase(mongoSettings.DatabaseName);
-            _usersCollection = database.GetCollection<UserReg>("users");
-            _productsCollection = database.GetCollection<Products>("products");
+            _users = database.GetCollection<UserReg>("users");
+            _products = database.GetCollection<Products>("products");
             _config = config;
             _httpContextAccessor = httpContextAccessor;
         }
@@ -40,23 +42,40 @@ namespace Jupeta.Services
         }
 
         //get all Users
-        public List<UserReg> GetUsers() => _usersCollection.Find(user => true).ToList();
+        public List<UserReg> GetUsers() => _users.Find(user => true).ToList();
 
-        //Get User by Id
-        public UserReg GetUser(string id) => _usersCollection.Find<UserReg>(user => user.Id == id).FirstOrDefault();
+        //Get User by email
+        public UserReg GetUser(string email) => _users.Find<UserReg>(user => user.Email == email).FirstOrDefault();
 
         //Add new User
-        public UserReg AddUser(UserReg user)
+        public void AddUser(AddUserModel user)
         {
-            user.PasswordHash = CreatePasswordhash(user.PasswordHash);
-            _usersCollection.InsertOne(user);
-            return user;
+            //check if email exists
+            var IsEmail = _users.Find(p => p.Email == user.Email).FirstOrDefault();
+            if (IsEmail is not null)
+            {
+                throw new Exception("User Already Exists");
+            }
+            var passwordHash = CreatePasswordhash(user.Password);
+
+            UserReg dbTable = new()
+            {
+                FirstName = user.FirstName,
+                LastName = user.LastName,
+                Email = user.Email,
+                PasswordHash = passwordHash,
+                PhoneNumber= user.PhoneNumber,
+                DateOfBirth= user.DateOfBirth,
+                CreatedOn = DateTime.UtcNow
+            };
+            _users.InsertOne(dbTable);
+
         }
 
         //Login 
         public async Task<object> Login(UserLogin user)
         {
-            var dbUser = await _usersCollection.Find(x => x.Email == user.Email).FirstOrDefaultAsync();
+            var dbUser = await _users.Find(x => x.Email == user.Email).FirstOrDefaultAsync();
 
             if (dbUser != null)
             {
@@ -66,8 +85,8 @@ namespace Jupeta.Services
                     string token = CreateToken(user);
                     return new TokenResponse
                     {
-                        Email = user.Email, 
-                        Token = token 
+                        Email = user.Email,
+                        Token = token
                     };
 
                 }
@@ -108,13 +127,17 @@ namespace Jupeta.Services
         //add new products
         public Products AddProdcut(Products product)
         {
-             _productsCollection.InsertOne(product);
+            _products.InsertOne(product);
             return product;
         }
 
 
         //get product by id
-        public Products GetProductById(string id) => _productsCollection.Find<Products>(product => product.Id == id).FirstOrDefault();
+        public Products GetProductById(string id) =>
+            _products.Find(product => product.Id == id).FirstOrDefault();
 
+
+        //get all products
+        public List<Products> GetAllProducts() => _products.Find(p => true).ToList();
     }
 }

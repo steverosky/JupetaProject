@@ -1,4 +1,5 @@
-﻿using Jupeta.Models;
+﻿using Jupeta.Models.DBModels;
+using Jupeta.Models.RequestModels;
 using Jupeta.Services;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
@@ -35,22 +36,22 @@ namespace Jupeta.Controllers
         //[Authorize]
         [HttpGet]
         [Route("GetUserById")]
-        public ActionResult<UserReg> GetUserById(string id)
+        public ActionResult<UserReg> GetUserById(string email)
         {
             _logger.LogInformation("Get user by Id method Starting.");
-            var user = _db.GetUser(id);
+            var user = _db.GetUser(email);
             return Ok(user);
         }
 
         //[Authorize]
         [HttpPost]
         [Route("AddUser")]
-        public ActionResult<UserReg> AddNewUser([FromBody] UserReg user)
+        public ActionResult AddNewUser([FromBody] AddUserModel user)
         {
             _logger.LogInformation("Add user method Starting.");
             _db.AddUser(user);
             _logger.LogWarning($"User {user.Email} created successfully");
-            return CreatedAtAction(nameof(GetUserById), new {id = user.Id}, user);
+            return CreatedAtAction(nameof(GetUserById), new {email = user.Email}, _db.GetUser(user.Email));
             
         }
 

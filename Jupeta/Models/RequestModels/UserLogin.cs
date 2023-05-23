@@ -1,4 +1,4 @@
-﻿namespace Jupeta.Models
+﻿namespace Jupeta.Models.RequestModels
 {
     public class UserLogin
     {
