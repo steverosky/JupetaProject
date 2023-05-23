@@ -1,7 +1,7 @@
 ﻿using MongoDB.Bson.Serialization.Attributes;
 using MongoDB.Bson;
 
-namespace Jupeta.Models
+namespace Jupeta.Models.DBModels
 {
     public class UserReg
     {
@@ -9,18 +9,20 @@ namespace Jupeta.Models
         [BsonRepresentation(BsonType.ObjectId)]
         public string Id { get; set; } = string.Empty;
         [BsonElement("firstName")]
-        public  string FirstName { get; set; } = string.Empty;
+        public string FirstName { get; set; } = string.Empty;
         [BsonElement("lastName")]
-        public  string LastName { get; set; } = string.Empty;
+        public string LastName { get; set; } = string.Empty;
         [BsonElement("email")]
-        public  string Email { get; set; } = string.Empty;
+        public string Email { get; set; } = string.Empty;
         [BsonElement("passwordHash")]
-        public  string PasswordHash { get; set; } = string.Empty;
+        public string PasswordHash { get; set; } = string.Empty;
         [BsonElement("phoneNumber")]
-        public int PhoneNumber { get; set;}
+        public int PhoneNumber { get; set; }
         [BsonElement("dateOfBirth")]
         [BsonDateTimeOptions(Kind = DateTimeKind.Utc)]
         public DateTime DateOfBirth { get; set; }
+        [BsonDateTimeOptions(Kind = DateTimeKind.Utc)]
+        public DateTime CreatedOn { get; set; }
 
     }
 }

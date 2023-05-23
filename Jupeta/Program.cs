@@ -1,4 +1,4 @@
-using Jupeta.Models;
+using Jupeta.Models.DBModels;
 using Jupeta.Services;
 using Microsoft.AspNetCore.Authentication.JwtBearer;
 using Microsoft.Extensions.Options;

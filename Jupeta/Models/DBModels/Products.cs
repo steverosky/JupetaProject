@@ -1,7 +1,7 @@
 ﻿using MongoDB.Bson.Serialization.Attributes;
 using MongoDB.Bson;
 
-namespace Jupeta.Models
+namespace Jupeta.Models.DBModels
 {
     public class Products
     {
