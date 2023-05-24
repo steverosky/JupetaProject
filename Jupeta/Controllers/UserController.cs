@@ -19,7 +19,7 @@ namespace Jupeta.Controllers
         {
             _configuration = config;
             _db = db;
-            _logger= logger;
+            _logger = logger;
             _logger.LogInformation("User controller called ");
         }
 
@@ -51,8 +51,8 @@ namespace Jupeta.Controllers
             _logger.LogInformation("Add user method Starting.");
             _db.AddUser(user);
             _logger.LogWarning($"User {user.Email} created successfully");
-            return CreatedAtAction(nameof(GetUserById), new {email = user.Email}, _db.GetUser(user.Email));
-            
+            return CreatedAtAction(nameof(GetUserById), new { email = user.Email }, _db.GetUser(user.Email));
+
         }
 
 
@@ -71,6 +71,14 @@ namespace Jupeta.Controllers
             return BadRequest("InValid Operation");
         }
 
+        [HttpGet]
+        [Route("GetAllProducts")]
+        public ActionResult<List<Products>> GetAllProducts()
+        {
+            _logger.LogInformation("Get all products method Starting.");
+            return Ok(_db.GetAllProducts());
+        }
+
 
         [HttpGet]
         [Route("GetProductById")]
@@ -84,12 +92,17 @@ namespace Jupeta.Controllers
 
         [HttpPost]
         [Route("AddProduct")]
-        public ActionResult<Products> AddNewProduct([FromBody] Products product)
+        public IActionResult AddNewProduct([FromForm] AddProductModel product)
         {
             _logger.LogInformation("Add product method Starting.");
-            _db.AddProdcut(product);
-            _logger.LogWarning($"product {product.ProductName} created successfully");
-            return CreatedAtAction(nameof(GetProductById), new { id = product.Id }, product);
+            if (!ModelState.IsValid)
+            {
+                return BadRequest(ModelState);
+            }
+            _db.AddProduct(product);
+            _logger.LogWarning($"product {product.ProductName} added successfully");
+            return CreatedAtAction(nameof(GetProductById), product);
+
 
         }
     }
