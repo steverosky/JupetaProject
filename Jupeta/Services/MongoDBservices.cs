@@ -15,9 +15,10 @@ namespace Jupeta.Services
         private readonly IMongoCollection<Products> _products;
         private readonly IConfiguration _config;
         private readonly IHttpContextAccessor _httpContextAccessor;
+        private readonly IFileService _fileService;
 
         public MongoDBservices(IMongoDBSettings mongoSettings, IConfiguration config, IMongoClient mongoClient,
-            IHttpContextAccessor httpContextAccessor)
+            IHttpContextAccessor httpContextAccessor, IFileService fileService)
         {
             //MongoClient client = new MongoClient(mongoSettings.ConnectionURI);
             var database = mongoClient.GetDatabase(mongoSettings.DatabaseName);
@@ -25,6 +26,7 @@ namespace Jupeta.Services
             _products = database.GetCollection<Products>("products");
             _config = config;
             _httpContextAccessor = httpContextAccessor;
+            _fileService = fileService;
         }
 
 
@@ -64,8 +66,8 @@ namespace Jupeta.Services
                 LastName = user.LastName,
                 Email = user.Email,
                 PasswordHash = passwordHash,
-                PhoneNumber= user.PhoneNumber,
-                DateOfBirth= user.DateOfBirth,
+                PhoneNumber = user.PhoneNumber,
+                DateOfBirth = user.DateOfBirth,
                 CreatedOn = DateTime.UtcNow
             };
             _users.InsertOne(dbTable);
@@ -125,12 +127,32 @@ namespace Jupeta.Services
         }
 
         //add new products
-        public Products AddProdcut(Products product)
+        public void AddProduct(AddProductModel product)
         {
-            _products.InsertOne(product);
-            return product;
+            if (product.ImageFile != null)
+            {
+                var fileResult = _fileService.SaveImage(product.ImageFile);
+                if (fileResult.Item1 == 1)
+                {
+                    Products dbTable = new()
+                    {
+                        ProductName = product.ProductName,
+                        Description = product.Description,
+                        Summary = product.Summary,
+                        Price = product.Price,
+                        IsAvailable = product.IsAvailable,
+                        Quantity = product.Quantity,
+                        ProductImage = fileResult.Item2, // getting name of image
+                        AddedAt = DateTime.UtcNow
+                    };
+                    _products.InsertOne(dbTable);
+                }
+                else
+                {
+                    throw new Exception("Error Uploading Image...");
+                }
+            }
         }
-
 
         //get product by id
         public Products GetProductById(string id) =>
@@ -139,5 +161,9 @@ namespace Jupeta.Services
 
         //get all products
         public List<Products> GetAllProducts() => _products.Find(p => true).ToList();
+
+        //get available products
+        public List<Products> GetAvailableProducts() => _products.Find(p => p.IsAvailable == true).ToList();
+
     }
 }
