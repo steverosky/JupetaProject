@@ -1,6 +1,7 @@
 using Jupeta.Models.DBModels;
 using Jupeta.Services;
 using Microsoft.AspNetCore.Authentication.JwtBearer;
+using Microsoft.Extensions.FileProviders;
 using Microsoft.Extensions.Options;
 using Microsoft.IdentityModel.Tokens;
 using MongoDB.Driver;
@@ -52,6 +53,7 @@ builder.Services.AddAuthentication(options =>
 
 // Add services to the container.
 builder.Services.AddScoped<IMongoDBservices, MongoDBservices>();
+builder.Services.AddTransient<IFileService, FileService>();
 
 // setup serilog
 builder.Host.UseSerilog((context, configuration) =>
@@ -65,6 +67,13 @@ builder.Services.AddEndpointsApiExplorer();
 builder.Services.AddSwaggerGen();
 
 var app = builder.Build();
+
+app.UseStaticFiles(new StaticFileOptions
+{
+    FileProvider = new PhysicalFileProvider(
+           Path.Combine(builder.Environment.ContentRootPath, "Uploads")),
+    RequestPath = "/Resources"
+});
 
 // Configure the HTTP request pipeline.
 if (app.Environment.IsDevelopment())
