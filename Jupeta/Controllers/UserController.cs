@@ -228,15 +228,49 @@ namespace Jupeta.Controllers
         }
 
 
-        //[HttpPost]
-        //[Route("AddToCart")]
-        //public IActionResult AddToCart(string id, string userId)
-        //{
-        //    _logger.LogInformation("Add to cart method Starting.");
+        [HttpPost]
+        [Route("AddToCart")]
+        public IActionResult AddToCart(string productId, string userId)
+        {
+            _logger.LogInformation("Add to cart method Starting.");
+            try
+            {
+                ResponseType type = ResponseType.Success;
+                _db.AddToCart(productId, userId);
 
-        //    _db.AddToCart(id, userId);
-        //    _logger.LogWarning($"product {product.ProductName} added successfully");
-        //    return CreatedAtAction(nameof(GetProductById), product);
+                _logger.LogWarning("product added successfully");
+                return Ok(ResponseHandler.GetAppResponse(type, "Product added to cart successfully"));
+            }
+            catch (Exception ex)
+            {
 
+                return BadRequest(ResponseHandler.GetExceptionResponse(ex));
+            }
+        }
+
+
+        [HttpGet]
+        [Route("ViewCart")]
+        public ActionResult<List<UserReg>> ViewCart(string userId)
+        {
+            ResponseType type = ResponseType.Success;
+            _logger.LogInformation("View cart method Starting.");
+            try
+            {
+                IEnumerable<Carts> data = _db.ViewCart(userId);
+
+                if (!data.Any())
+                {
+                    type = ResponseType.NotFound;
+                }
+                return Ok(ResponseHandler.GetAppResponse(type, data));
+
+            }
+            catch (Exception ex)
+            {
+
+                return BadRequest(ResponseHandler.GetExceptionResponse(ex));
+            }
+        }
     }
 }
