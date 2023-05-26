@@ -13,6 +13,7 @@ namespace Jupeta.Services
     {
         private readonly IMongoCollection<UserReg> _users;
         private readonly IMongoCollection<Products> _products;
+        private readonly IMongoCollection<Carts> _carts;
         private readonly IConfiguration _config;
         private readonly IHttpContextAccessor _httpContextAccessor;
         private readonly IFileService _fileService;
@@ -24,6 +25,7 @@ namespace Jupeta.Services
             var database = mongoClient.GetDatabase(mongoSettings.DatabaseName);
             _users = database.GetCollection<UserReg>("users");
             _products = database.GetCollection<Products>("products");
+            _carts = database.GetCollection<Carts>("carts");
             _config = config;
             _httpContextAccessor = httpContextAccessor;
             _fileService = fileService;
@@ -87,6 +89,7 @@ namespace Jupeta.Services
                     string token = CreateToken(user);
                     return new TokenResponse
                     {
+                        Id = dbUser.Id,
                         Email = user.Email,
                         Token = token
                     };
@@ -164,6 +167,31 @@ namespace Jupeta.Services
 
         //get available products
         public List<Products> GetAvailableProducts() => _products.Find(p => p.IsAvailable == true).ToList();
+
+        //add to cart
+        public void AddToCart(string id, string userId)
+        {
+            var product = _products.Find(p => p.Id == id).FirstOrDefault();
+            if (!product.IsAvailable == false)
+            {
+                Carts dbCart = new()
+                {
+                    UserId = userId,
+                    ProductId = product.Id,
+                    ProductName = product.ProductName,
+                    ProductImage = product.ProductImage,
+                    Price = product.Price,
+                    Quantity = product.Quantity,
+                    DateAdded = product.AddedAt
+                };
+                _carts.InsertOne(dbCart);
+            }
+            else throw new Exception("Product is out of stock");
+
+        }
+
+        //view cart
+        public List<Carts> ViewCart(string id) => _carts.Find(c => true && c.UserId == id).ToList();
 
     }
 }
