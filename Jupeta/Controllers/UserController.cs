@@ -1,5 +1,6 @@
 ﻿using Jupeta.Models.DBModels;
 using Jupeta.Models.RequestModels;
+using Jupeta.Models.ResponseModels;
 using Jupeta.Services;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
@@ -28,9 +29,26 @@ namespace Jupeta.Controllers
         [Route("GetAllUsers")]
         public ActionResult<List<UserReg>> GetUsers()
         {
+            ResponseType type = ResponseType.Success;
             _logger.LogInformation("Get all users method Starting.");
-            return Ok(_db.GetUsers());
+            try
+            {
+                IEnumerable<UserReg> data = _db.GetUsers();
+
+                if (!data.Any())
+                {
+                    type = ResponseType.NotFound;
+                }
+                return Ok(ResponseHandler.GetAppResponse(type, data));
+
+            }
+            catch (Exception ex)
+            {
+
+                return BadRequest(ResponseHandler.GetExceptionResponse(ex));
+            }
         }
+
 
 
         //[Authorize]
@@ -38,9 +56,23 @@ namespace Jupeta.Controllers
         [Route("GetUserById")]
         public ActionResult<UserReg> GetUserById(string email)
         {
+            ResponseType type = ResponseType.Success;
             _logger.LogInformation("Get user by Id method Starting.");
-            var user = _db.GetUser(email);
-            return Ok(user);
+            try
+            {
+                UserReg data = _db.GetUser(email);
+                if (data == null)
+                {
+                    type = ResponseType.NotFound;
+                }
+                return Ok(ResponseHandler.GetAppResponse(type, data));
+
+            }
+            catch (Exception ex)
+            {
+
+                return BadRequest(ResponseHandler.GetExceptionResponse(ex));
+            }
         }
 
         //[Authorize]
@@ -49,10 +81,23 @@ namespace Jupeta.Controllers
         public ActionResult AddNewUser([FromBody] AddUserModel user)
         {
             _logger.LogInformation("Add user method Starting.");
-            _db.AddUser(user);
-            _logger.LogWarning($"User {user.Email} created successfully");
-            return CreatedAtAction(nameof(GetUserById), new { email = user.Email }, _db.GetUser(user.Email));
+            if (!ModelState.IsValid)
+            {
+                return BadRequest(ModelState);
+            }
+            try
+            {
+                ResponseType type = ResponseType.Success;
+                _db.AddUser(user);
 
+                _logger.LogWarning($"User {user.Email} created successfully");
+                return Ok(ResponseHandler.GetAppResponse(type, _db.GetUser(user.Email)));
+            }
+            catch (Exception ex)
+            {
+
+                return BadRequest(ResponseHandler.GetExceptionResponse(ex));
+            }
         }
 
 
@@ -63,20 +108,74 @@ namespace Jupeta.Controllers
         public async Task<IActionResult> Login([FromBody] UserLogin user)
         {
             _logger.LogInformation("Login method Starting.");
-            if (user is not null)
+            if (!ModelState.IsValid)
             {
-                var model = await _db.Login(user);
-                return Ok(model);
+                return BadRequest(ModelState);
             }
-            return BadRequest("InValid Operation");
+            try
+            {
+                ResponseType type = ResponseType.Success;
+                var model = await _db.Login(user);
+
+                return Ok(ResponseHandler.GetAppResponse(type, model));
+            }
+
+            catch (Exception ex)
+            {
+
+                return BadRequest(ResponseHandler.GetExceptionResponse(ex));
+            }
         }
+
+
 
         [HttpGet]
         [Route("GetAllProducts")]
         public ActionResult<List<Products>> GetAllProducts()
         {
             _logger.LogInformation("Get all products method Starting.");
-            return Ok(_db.GetAllProducts());
+            ResponseType type = ResponseType.Success;
+            try
+            {
+                IEnumerable<Products> data = _db.GetAllProducts();
+
+                if (!data.Any())
+                {
+                    type = ResponseType.NotFound;
+                }
+                return Ok(ResponseHandler.GetAppResponse(type, data));
+
+            }
+            catch (Exception ex)
+            {
+
+                return BadRequest(ResponseHandler.GetExceptionResponse(ex));
+            }
+        }
+
+
+        [HttpGet]
+        [Route("GetAvailableProducts")]
+        public ActionResult<List<Products>> GetAvailableProducts()
+        {
+            _logger.LogInformation("Get all available products method Starting.");
+            ResponseType type = ResponseType.Success;
+            try
+            {
+                IEnumerable<Products> data = _db.GetAvailableProducts();
+
+                if (!data.Any())
+                {
+                    type = ResponseType.NotFound;
+                }
+                return Ok(ResponseHandler.GetAppResponse(type, data));
+
+            }
+            catch (Exception ex)
+            {
+
+                return BadRequest(ResponseHandler.GetExceptionResponse(ex));
+            }
         }
 
 
@@ -85,8 +184,22 @@ namespace Jupeta.Controllers
         public ActionResult<UserReg> GetProductById(string id)
         {
             _logger.LogInformation("Get product by Id method Starting.");
-            var product = _db.GetProductById(id);
-            return Ok(product);
+            ResponseType type = ResponseType.Success;
+            try
+            {
+                Products data = _db.GetProductById(id);
+                if (data == null)
+                {
+                    type = ResponseType.NotFound;
+                }
+                return Ok(ResponseHandler.GetAppResponse(type, data));
+
+            }
+            catch (Exception ex)
+            {
+
+                return BadRequest(ResponseHandler.GetExceptionResponse(ex));
+            }
         }
 
 
@@ -99,11 +212,31 @@ namespace Jupeta.Controllers
             {
                 return BadRequest(ModelState);
             }
-            _db.AddProduct(product);
-            _logger.LogWarning($"product {product.ProductName} added successfully");
-            return CreatedAtAction(nameof(GetProductById), product);
+            try
+            {
+                ResponseType type = ResponseType.Success;
+                _db.AddProduct(product);
 
+                _logger.LogWarning($"product {product.ProductName} added successfully");
+                return Ok(ResponseHandler.GetAppResponse(type, product));
+            }
+            catch (Exception ex)
+            {
 
+                return BadRequest(ResponseHandler.GetExceptionResponse(ex));
+            }
         }
+
+
+        //[HttpPost]
+        //[Route("AddToCart")]
+        //public IActionResult AddToCart(string id, string userId)
+        //{
+        //    _logger.LogInformation("Add to cart method Starting.");
+
+        //    _db.AddToCart(id, userId);
+        //    _logger.LogWarning($"product {product.ProductName} added successfully");
+        //    return CreatedAtAction(nameof(GetProductById), product);
+
     }
 }

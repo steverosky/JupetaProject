@@ -13,7 +13,9 @@ namespace Jupeta.Services
         public void AddProduct(AddProductModel product);
         public Products GetProductById(string id);
         public List<Products> GetAllProducts();
-
+        public List<Products> GetAvailableProducts();
+        public void AddToCart(string id, string userId);
+        public List<Carts> ViewCart(string id);
 
     }
 }
