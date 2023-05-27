@@ -251,19 +251,20 @@ namespace Jupeta.Controllers
 
         [HttpGet]
         [Route("ViewCart")]
-        public ActionResult<List<UserReg>> ViewCart(string userId)
+        public ActionResult ViewCart(string userId)
         {
             ResponseType type = ResponseType.Success;
             _logger.LogInformation("View cart method Starting.");
             try
             {
-                IEnumerable<Carts> data = _db.ViewCart(userId);
+                var (carts, totalPrice) = _db.ViewCart(userId);
 
-                if (!data.Any())
+                if (carts.Count == 0)
                 {
                     type = ResponseType.NotFound;
                 }
-                return Ok(ResponseHandler.GetAppResponse(type, data));
+                var responseData = new { Carts = carts, TotalPrice = totalPrice };
+                return Ok(ResponseHandler.GetAppResponse(type, responseData));
 
             }
             catch (Exception ex)
