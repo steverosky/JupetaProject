@@ -204,5 +204,15 @@ namespace Jupeta.Services
             return (carts, totalPrice);
         }
 
+
+        //delete item from cart
+        public void DeleteItem (string id, string userId)
+        {
+            var carts = _carts.DeleteOne(c => c.UserId == userId && c.Id == id);
+            if (carts.DeletedCount is not > 0)
+            {
+                throw new Exception("Error deleting item");
+            }
+        }
     }
 }

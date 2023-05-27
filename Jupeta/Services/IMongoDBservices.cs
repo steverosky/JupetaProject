@@ -16,6 +16,7 @@ namespace Jupeta.Services
         public List<Products> GetAvailableProducts();
         public void AddToCart(string id, string userId);
         public (List<Carts> carts, decimal totalPrice) ViewCart(string id);
+        public void DeleteItem(string id, string userId);
 
     }
 }

@@ -273,5 +273,25 @@ namespace Jupeta.Controllers
                 return BadRequest(ResponseHandler.GetExceptionResponse(ex));
             }
         }
+
+        [HttpDelete]
+        [Route("DeleteItemFromCart")]
+        public IActionResult DeleteItemFromCart(string productId, string userId)
+        {
+            _logger.LogInformation("Delete item from cart method Starting.");
+            try
+            {
+                ResponseType type = ResponseType.Success;
+                _db.DeleteItem(productId, userId);
+
+                _logger.LogWarning("product deleted successfully");
+                return Ok(ResponseHandler.GetAppResponse(type, "Product deleted from cart successfully"));
+            }
+            catch (Exception ex)
+            {
+
+                return BadRequest(ResponseHandler.GetExceptionResponse(ex));
+            }
+        }
     }
 }
