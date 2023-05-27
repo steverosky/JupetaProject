@@ -251,20 +251,41 @@ namespace Jupeta.Controllers
 
         [HttpGet]
         [Route("ViewCart")]
-        public ActionResult<List<UserReg>> ViewCart(string userId)
+        public ActionResult ViewCart(string userId)
         {
             ResponseType type = ResponseType.Success;
             _logger.LogInformation("View cart method Starting.");
             try
             {
-                IEnumerable<Carts> data = _db.ViewCart(userId);
+                var (carts, totalPrice) = _db.ViewCart(userId);
 
-                if (!data.Any())
+                if (carts.Count == 0)
                 {
                     type = ResponseType.NotFound;
                 }
-                return Ok(ResponseHandler.GetAppResponse(type, data));
+                var responseData = new { Carts = carts, TotalPrice = totalPrice };
+                return Ok(ResponseHandler.GetAppResponse(type, responseData));
 
+            }
+            catch (Exception ex)
+            {
+
+                return BadRequest(ResponseHandler.GetExceptionResponse(ex));
+            }
+        }
+
+        [HttpDelete]
+        [Route("DeleteItemFromCart")]
+        public IActionResult DeleteItemFromCart(string productId, string userId)
+        {
+            _logger.LogInformation("Delete item from cart method Starting.");
+            try
+            {
+                ResponseType type = ResponseType.Success;
+                _db.DeleteItem(productId, userId);
+
+                _logger.LogWarning("product deleted successfully");
+                return Ok(ResponseHandler.GetAppResponse(type, "Product deleted from cart successfully"));
             }
             catch (Exception ex)
             {

@@ -191,7 +191,28 @@ namespace Jupeta.Services
         }
 
         //view cart
-        public List<Carts> ViewCart(string id) => _carts.Find(c => true && c.UserId == id).ToList();
+        public (List<Carts> carts, decimal totalPrice) ViewCart(string id)
+        {
+            var carts = _carts.Find(c => c.UserId == id).ToList();
+            decimal totalPrice = 0;
 
+            foreach (var cart in carts)
+            {
+                totalPrice += cart.Price;
+            }
+
+            return (carts, totalPrice);
+        }
+
+
+        //delete item from cart
+        public void DeleteItem (string id, string userId)
+        {
+            var carts = _carts.DeleteOne(c => c.UserId == userId && c.Id == id);
+            if (carts.DeletedCount is not > 0)
+            {
+                throw new Exception("Error deleting item");
+            }
+        }
     }
 }
