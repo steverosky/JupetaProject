@@ -76,8 +76,18 @@ namespace Jupeta.Services
 
         }
 
-        //Login 
-        public async Task<object> Login(UserLogin user)
+
+        // Edit user profile
+        public void EditUser(AddUserModel user)
+        {
+            //check if email exists
+            var IsEmail = _users.Find(p => p.Email == user.Email).FirstOrDefault();
+
+        }
+
+
+            //Login 
+            public async Task<object> Login(UserLogin user)
         {
             var dbUser = await _users.Find(x => x.Email == user.Email).FirstOrDefaultAsync();
 
@@ -208,7 +218,7 @@ namespace Jupeta.Services
         //delete item from cart
         public void DeleteItem (string id, string userId)
         {
-            var carts = _carts.DeleteOne(c => c.UserId == userId && c.Id == id);
+            var carts = _carts.DeleteOne(c => c.UserId == userId && c.ProductId == id);
             if (carts.DeletedCount is not > 0)
             {
                 throw new Exception("Error deleting item");
