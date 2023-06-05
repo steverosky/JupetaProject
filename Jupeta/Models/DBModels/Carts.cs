@@ -7,7 +7,7 @@ namespace Jupeta.Models.DBModels
     {
         [BsonId]
         [BsonRepresentation(BsonType.ObjectId)]
-        public string Id { get; set; }
+        public string Id { get; set; } = string.Empty;
         [BsonElement("userId")]
         public required string UserId { get; set; }
         [BsonElement("productId")]
