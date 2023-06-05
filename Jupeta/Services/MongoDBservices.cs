@@ -78,16 +78,29 @@ namespace Jupeta.Services
 
 
         // Edit user profile
-        public void EditUser(AddUserModel user)
-        {
-            //check if email exists
-            var IsEmail = _users.Find(p => p.Email == user.Email).FirstOrDefault();
+        //public void EditUser(AddUserModel user)
+        //{
+        //    //check if email exists
+        //    var IsEmail = _users.Find(p => p.Email == user.Email).FirstOrDefault();
+        //    if (IsEmail is not null)
+        //    {
+        //        UserReg dbTable = new()
+        //        {
+        //            FirstName = user.FirstName,
+        //            LastName = user.LastName,
+        //            Email = user.Email,
+        //            PhoneNumber = user.PhoneNumber,
+        //            DateOfBirth = user.DateOfBirth,
+        //            CreatedOn = DateTime.UtcNow
+        //        };
+        //    }
+        //    _users.InsertOne(dbTable);
 
-        }
+        //}
 
 
-            //Login 
-            public async Task<object> Login(UserLogin user)
+        //Login 
+        public async Task<object> Login(UserLogin user)
         {
             var dbUser = await _users.Find(x => x.Email == user.Email).FirstOrDefaultAsync();
 
@@ -216,7 +229,7 @@ namespace Jupeta.Services
 
 
         //delete item from cart
-        public void DeleteItem (string id, string userId)
+        public void DeleteItem(string id, string userId)
         {
             var carts = _carts.DeleteOne(c => c.UserId == userId && c.ProductId == id);
             if (carts.DeletedCount is not > 0)
