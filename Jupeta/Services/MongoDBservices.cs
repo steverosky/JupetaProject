@@ -52,10 +52,10 @@ namespace Jupeta.Services
         public UserReg GetUser(string email) => _users.Find<UserReg>(user => user.Email == email).FirstOrDefault();
 
         //Add new User
-        public void AddUser(AddUserModel user)
+        public async Task AddUser(AddUserModel user)
         {
             //check if email exists
-            var IsEmail = _users.Find(p => p.Email == user.Email).FirstOrDefault();
+            var IsEmail = await _users.Find(p => p.Email == user.Email).FirstOrDefaultAsync();
             if (IsEmail is not null)
             {
                 throw new Exception("User Already Exists");
@@ -72,7 +72,7 @@ namespace Jupeta.Services
                 DateOfBirth = user.DateOfBirth,
                 CreatedOn = DateTime.UtcNow
             };
-            _users.InsertOne(dbTable);
+            await _users.InsertOneAsync(dbTable);
 
         }
 
@@ -153,7 +153,7 @@ namespace Jupeta.Services
         }
 
         //add new products
-        public void AddProduct(AddProductModel product)
+        public async Task AddProduct(AddProductModel product)
         {
             if (product.ImageFile != null)
             {
@@ -171,7 +171,7 @@ namespace Jupeta.Services
                         ProductImage = fileResult.Item2, // getting name of image
                         AddedAt = DateTime.UtcNow
                     };
-                    _products.InsertOne(dbTable);
+                    await _products.InsertOneAsync(dbTable);
                 }
                 else
                 {
@@ -181,20 +181,29 @@ namespace Jupeta.Services
         }
 
         //get product by id
-        public Products GetProductById(string id) =>
-            _products.Find(product => product.Id == id).FirstOrDefault();
+        public async Task<Products> GetProductById(string id)
+        {
+            return await Task.Run(() => _products.Find(product => product.Id == id).FirstOrDefault());
+        }
+
 
 
         //get all products
-        public List<Products> GetAllProducts() => _products.Find(p => true).ToList();
+        public async Task<List<Products>> GetAllProducts()
+        {
+            return await Task.Run(() => _products.Find(p => true).ToList());
+        }
 
         //get available products
-        public List<Products> GetAvailableProducts() => _products.Find(p => p.IsAvailable == true).ToList();
+        public async Task<List<Products>> GetAvailableProducts()
+        {
+            return await Task.Run(() => _products.Find(p => p.IsAvailable == true).ToList());
+        }
 
         //add to cart
-        public void AddToCart(string id, string userId)
+        public async Task AddToCart(string id, string userId)
         {
-            var product = _products.Find(p => p.Id == id).FirstOrDefault();
+            var product = await _products.Find(p => p.Id == id).FirstOrDefaultAsync();
             if (!product.IsAvailable == false)
             {
                 Carts dbCart = new()
@@ -207,16 +216,16 @@ namespace Jupeta.Services
                     Quantity = product.Quantity,
                     DateAdded = product.AddedAt
                 };
-                _carts.InsertOne(dbCart);
+                await _carts.InsertOneAsync(dbCart);
             }
             else throw new Exception("Product is out of stock");
 
         }
 
         //view cart
-        public (List<Carts> carts, decimal totalPrice) ViewCart(string id)
+        public async Task<(List<Carts> carts, decimal totalPrice)> ViewCart(string id)
         {
-            var carts = _carts.Find(c => c.UserId == id).ToList();
+            var carts = await _carts.Find(c => c.UserId == id).ToListAsync();
             decimal totalPrice = 0;
 
             foreach (var cart in carts)
@@ -229,9 +238,9 @@ namespace Jupeta.Services
 
 
         //delete item from cart
-        public void DeleteItem(string id, string userId)
+        public async Task DeleteItem(string id, string userId)
         {
-            var carts = _carts.DeleteOne(c => c.UserId == userId && c.ProductId == id);
+            var carts = await _carts.DeleteOneAsync(c => c.UserId == userId && c.ProductId == id);
             if (carts.DeletedCount is not > 0)
             {
                 throw new Exception("Error deleting item");
