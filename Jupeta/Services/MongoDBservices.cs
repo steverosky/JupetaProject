@@ -169,6 +169,7 @@ namespace Jupeta.Services
                         IsAvailable = product.IsAvailable,
                         Quantity = product.Quantity,
                         ProductImage = fileResult.Item2, // getting name of image
+                        ImageFileUrl = "https://localhost:7172/resources/"+fileResult.Item2,
                         AddedAt = DateTime.UtcNow
                     };
                     await _products.InsertOneAsync(dbTable);

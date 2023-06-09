@@ -27,6 +27,8 @@ namespace Jupeta.Models.DBModels
         public DateTime AddedAt { get; set; }
         [BsonElement("productImage")]
         public string ProductImage { get; set; } = string.Empty;
+        [BsonElement("imageFile")]
+        public string ImageFileUrl { get; set; } = string.Empty;
         [BsonIgnore]
         public IFormFile? ImageFile { get; set; }
     }
