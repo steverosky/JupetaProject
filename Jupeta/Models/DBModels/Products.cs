@@ -17,7 +17,7 @@ namespace Jupeta.Models.DBModels
         [BsonElement("summary")]
         public string Summary { get; set; } = string.Empty;
         [BsonElement("price")]
-        public int Price { get; set; }
+        public double Price { get; set; }
         [BsonElement("isAvailable")]
         public bool IsAvailable { get; set; } = true;
         [BsonElement("quantity")]

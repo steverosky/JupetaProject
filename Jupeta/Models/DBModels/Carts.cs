@@ -15,7 +15,7 @@ namespace Jupeta.Models.DBModels
         [BsonElement("productName")]
         public required string ProductName { get; set; }
         [BsonElement("price")]
-        public required int Price { get; set; }
+        public required double Price { get; set; }
         [BsonElement("quantity")]
         public required int Quantity { get; set; }
         [BsonElement("productImage")]

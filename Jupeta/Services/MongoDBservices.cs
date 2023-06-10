@@ -157,8 +157,9 @@ namespace Jupeta.Services
         {
             if (product.ImageFile != null)
             {
-                var fileResult = _fileService.SaveImage(product.ImageFile);
-                if (fileResult.Item1 == 1)
+                Guid id = Guid.NewGuid();
+                var fileResult = await _fileService.UploadImage(id, product.ImageFile);
+                if (fileResult is not null)
                 {
                     Products dbTable = new()
                     {
@@ -168,8 +169,8 @@ namespace Jupeta.Services
                         Price = product.Price,
                         IsAvailable = product.IsAvailable,
                         Quantity = product.Quantity,
-                        ProductImage = fileResult.Item2, // getting name of image
-                        ImageFileUrl = "https://localhost:7172/resources/"+fileResult.Item2,
+                        //ProductImage = fileResult.FileName, // getting name of image
+                        //ImageFileUrl = "https://localhost:7172/resources/"+fileResult.Item2,
                         AddedAt = DateTime.UtcNow
                     };
                     await _products.InsertOneAsync(dbTable);
@@ -224,10 +225,10 @@ namespace Jupeta.Services
         }
 
         //view cart
-        public async Task<(List<Carts> carts, decimal totalPrice)> ViewCart(string id)
+        public async Task<(List<Carts> carts, double totalPrice)> ViewCart(string id)
         {
             var carts = await _carts.Find(c => c.UserId == id).ToListAsync();
-            decimal totalPrice = 0;
+            double totalPrice = 0;
 
             foreach (var cart in carts)
             {

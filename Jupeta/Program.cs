@@ -1,11 +1,14 @@
+using Amazon.S3;
 using Jupeta.Models.DBModels;
 using Jupeta.Services;
 using Microsoft.AspNetCore.Authentication.JwtBearer;
 using Microsoft.Extensions.FileProviders;
 using Microsoft.Extensions.Options;
 using Microsoft.IdentityModel.Tokens;
+using Microsoft.OpenApi.Models;
 using MongoDB.Driver;
 using Serilog;
+using Swashbuckle.AspNetCore.Filters;
 using System.Text;
 
 var builder = WebApplication.CreateBuilder(args);
@@ -54,6 +57,9 @@ builder.Services.AddAuthentication(options =>
 // Add services to the container.
 builder.Services.AddScoped<IMongoDBservices, MongoDBservices>();
 builder.Services.AddTransient<IFileService, FileService>();
+builder.Services.AddSingleton<IAmazonS3, AmazonS3Client>();
+
+builder.Services.AddDefaultAWSOptions(builder.Configuration.GetAWSOptions());
 
 // setup serilog
 builder.Host.UseSerilog((context, configuration) =>
@@ -64,7 +70,16 @@ builder.Services.AddHttpContextAccessor();
 builder.Services.AddControllers();
 // Learn more about configuring Swagger/OpenAPI at https://aka.ms/aspnetcore/swashbuckle
 builder.Services.AddEndpointsApiExplorer();
-builder.Services.AddSwaggerGen();
+builder.Services.AddSwaggerGen(options =>
+{
+    options.AddSecurityDefinition("oauth2", new OpenApiSecurityScheme
+    {
+        In = ParameterLocation.Header,
+        Name = "Authorization",
+        Type = SecuritySchemeType.ApiKey
+    });
+    options.OperationFilter<SecurityRequirementsOperationFilter>();
+});
 
 var app = builder.Build();
 

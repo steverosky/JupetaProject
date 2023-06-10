@@ -7,7 +7,7 @@ using Microsoft.AspNetCore.Mvc;
 
 namespace Jupeta.Controllers
 {
-
+    //[Authorize]
     [Route("api/[controller]")]
     [ApiController]
     public class UserController : ControllerBase
