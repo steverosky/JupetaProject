@@ -180,7 +180,7 @@ namespace Jupeta.Controllers
 
 
         [HttpGet]
-        [Route("GetProductById/{id}")]
+        [Route("GetProductById")]
         public async Task<ActionResult<UserReg>> GetProductById(string id)
         {
             _logger.LogInformation("Get product by Id method Starting.");
