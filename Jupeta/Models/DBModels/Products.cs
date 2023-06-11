@@ -26,10 +26,10 @@ namespace Jupeta.Models.DBModels
         [BsonDateTimeOptions]
         public DateTime AddedAt { get; set; }
         [BsonElement("productImage")]
-        public string ProductImage { get; set; } = string.Empty;
+        public Guid ProductImage { get; set; }
         [BsonElement("imageFile")]
-        public string ImageFileUrl { get; set; } = string.Empty;
+        public object? ImageFileUrl { get; set; } = string.Empty;
         [BsonIgnore]
-        public IFormFile? ImageFile { get; set; }
+        public FormFile? ImageFile { get; set; }
     }
 }

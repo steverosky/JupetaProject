@@ -8,6 +8,7 @@ namespace Jupeta.Services
         private readonly IWebHostEnvironment _env;
         private readonly IAmazonS3 _s3;
         private const string BucketName = "jupetaprojects3";
+        //private string keyName = DateTime.Now.ToString() + ".png";
 
         public FileService(IWebHostEnvironment env, IAmazonS3 s3)
         {
@@ -21,9 +22,10 @@ namespace Jupeta.Services
             var putObjectRequest = new PutObjectRequest()
             {
                 BucketName = BucketName,
-                Key = $"product_images/{id}",
+                Key = $"product_images/{id}.png",
                 ContentType = ImageFile.ContentType,
                 InputStream = ImageFile.OpenReadStream(),
+                CannedACL = S3CannedACL.PublicRead,
                 Metadata =
                 {
                     ["x-amz-meta-originalname"] = ImageFile.FileName,
@@ -38,14 +40,15 @@ namespace Jupeta.Services
         {
             try
             {
-                var getObjectRequest = new GetObjectRequest
+                var getObjectRequest = new GetObjectRequest()
                 {
 
                     BucketName = BucketName,
-                    Key = $"images/{id}"
+                    Key = $"images/{id}.png",
                 };
 
-                return await _s3.GetObjectAsync(getObjectRequest);
+                var result = await _s3.GetObjectAsync(getObjectRequest);
+                return result;
             }
             catch (AmazonS3Exception ex) when (ex.Message is "The specified key does not exist.")
             {
@@ -56,9 +59,9 @@ namespace Jupeta.Services
 
 
         //delete image from s3
-        public async Task<DeleteObjectResponse> DeleteImage(Guid id)
+        public async Task<DeleteObjectResponse?> DeleteImage(Guid id)
         {
-            var getDeleteRequest = new DeleteObjectRequest
+            var getDeleteRequest = new DeleteObjectRequest()
             {
 
                 BucketName = BucketName,

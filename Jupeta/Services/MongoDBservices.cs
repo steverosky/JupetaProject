@@ -161,6 +161,7 @@ namespace Jupeta.Services
                 var fileResult = await _fileService.UploadImage(id, product.ImageFile);
                 if (fileResult is not null)
                 {
+                    string imageId = id.ToString();
                     Products dbTable = new()
                     {
                         ProductName = product.ProductName,
@@ -169,8 +170,8 @@ namespace Jupeta.Services
                         Price = product.Price,
                         IsAvailable = product.IsAvailable,
                         Quantity = product.Quantity,
-                        //ProductImage = fileResult.FileName, // getting name of image
-                        //ImageFileUrl = "https://localhost:7172/resources/"+fileResult.Item2,
+                        ProductImage = id, // getting name of image
+                        ImageFileUrl = "https://jupetaprojects3.s3.amazonaws.com/product_images/" + imageId+".png",
                         AddedAt = DateTime.UtcNow
                     };
                     await _products.InsertOneAsync(dbTable);
@@ -185,7 +186,7 @@ namespace Jupeta.Services
         //get product by id
         public async Task<Products> GetProductById(string id)
         {
-            return await Task.Run(() => _products.Find(product => product.Id == id).FirstOrDefault());
+             return await Task.Run(() => _products.Find(product => product.Id == id).FirstOrDefault());
         }
 
 

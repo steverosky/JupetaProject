@@ -19,7 +19,7 @@ namespace Jupeta.Models.DBModels
         [BsonElement("quantity")]
         public required int Quantity { get; set; }
         [BsonElement("productImage")]
-        public required string ProductImage { get; set; }
+        public required Guid ProductImage { get; set; }
         [BsonElement("dateAdded")]
         public required DateTime DateAdded { get; set; }
 

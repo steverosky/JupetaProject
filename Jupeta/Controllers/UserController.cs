@@ -137,9 +137,9 @@ namespace Jupeta.Controllers
             ResponseType type = ResponseType.Success;
             try
             {
-                IEnumerable<Products> data = await _db.GetAllProducts();
+                 var data = await _db.GetAllProducts();
 
-                if (!data.Any())
+                if (data == null)
                 {
                     type = ResponseType.NotFound;
                 }
