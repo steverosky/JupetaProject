@@ -7,7 +7,7 @@ using Microsoft.AspNetCore.Mvc;
 
 namespace Jupeta.Controllers
 {
-
+    //[Authorize]
     [Route("api/[controller]")]
     [ApiController]
     public class UserController : ControllerBase
@@ -78,7 +78,7 @@ namespace Jupeta.Controllers
         //[Authorize]
         [HttpPost]
         [Route("AddUser")]
-        public ActionResult AddNewUser([FromBody] AddUserModel user)
+        public async Task<ActionResult> AddNewUser([FromBody] AddUserModel user)
         {
             _logger.LogInformation("Add user method Starting.");
             if (!ModelState.IsValid)
@@ -88,7 +88,7 @@ namespace Jupeta.Controllers
             try
             {
                 ResponseType type = ResponseType.Success;
-                _db.AddUser(user);
+                await _db.AddUser(user);
 
                 _logger.LogWarning($"User {user.Email} created successfully");
                 return Ok(ResponseHandler.GetAppResponse(type, _db.GetUser(user.Email)));
@@ -131,15 +131,15 @@ namespace Jupeta.Controllers
 
         [HttpGet]
         [Route("GetAllProducts")]
-        public ActionResult<List<Products>> GetAllProducts()
+        public async Task<ActionResult<List<Products>>> GetAllProducts()
         {
             _logger.LogInformation("Get all products method Starting.");
             ResponseType type = ResponseType.Success;
             try
             {
-                IEnumerable<Products> data = _db.GetAllProducts();
+                 var data = await _db.GetAllProducts();
 
-                if (!data.Any())
+                if (data == null)
                 {
                     type = ResponseType.NotFound;
                 }
@@ -156,13 +156,13 @@ namespace Jupeta.Controllers
 
         [HttpGet]
         [Route("GetAvailableProducts")]
-        public ActionResult<List<Products>> GetAvailableProducts()
+        public async Task<ActionResult<List<Products>>> GetAvailableProducts()
         {
             _logger.LogInformation("Get all available products method Starting.");
             ResponseType type = ResponseType.Success;
             try
             {
-                IEnumerable<Products> data = _db.GetAvailableProducts();
+                IEnumerable<Products> data = await _db.GetAvailableProducts();
 
                 if (!data.Any())
                 {
@@ -180,14 +180,14 @@ namespace Jupeta.Controllers
 
 
         [HttpGet]
-        [Route("GetProductById")]
-        public ActionResult<UserReg> GetProductById(string id)
+        [Route("GetProductById/{id}")]
+        public async Task<ActionResult<UserReg>> GetProductById(string id)
         {
             _logger.LogInformation("Get product by Id method Starting.");
             ResponseType type = ResponseType.Success;
             try
             {
-                Products data = _db.GetProductById(id);
+                Products data = await _db.GetProductById(id);
                 if (data == null)
                 {
                     type = ResponseType.NotFound;
@@ -205,7 +205,7 @@ namespace Jupeta.Controllers
 
         [HttpPost]
         [Route("AddProduct")]
-        public IActionResult AddNewProduct([FromForm] AddProductModel product)
+        public async Task<IActionResult> AddNewProduct([FromForm] AddProductModel product)
         {
             _logger.LogInformation("Add product method Starting.");
             if (!ModelState.IsValid)
@@ -215,7 +215,7 @@ namespace Jupeta.Controllers
             try
             {
                 ResponseType type = ResponseType.Success;
-                _db.AddProduct(product);
+                await _db.AddProduct(product);
 
                 _logger.LogWarning($"product {product.ProductName} added successfully");
                 return Ok(ResponseHandler.GetAppResponse(type, product));
@@ -230,13 +230,13 @@ namespace Jupeta.Controllers
 
         [HttpPost]
         [Route("AddToCart")]
-        public IActionResult AddToCart(string productId, string userId)
+        public async Task<IActionResult> AddToCart(string productId, string userId)
         {
             _logger.LogInformation("Add to cart method Starting.");
             try
             {
                 ResponseType type = ResponseType.Success;
-                _db.AddToCart(productId, userId);
+                await _db.AddToCart(productId, userId);
 
                 _logger.LogWarning("product added successfully");
                 return Ok(ResponseHandler.GetAppResponse(type, "Product added to cart successfully"));
@@ -251,13 +251,13 @@ namespace Jupeta.Controllers
 
         [HttpGet]
         [Route("ViewCart")]
-        public ActionResult ViewCart(string userId)
+        public async Task<ActionResult> ViewCart(string userId)
         {
             ResponseType type = ResponseType.Success;
             _logger.LogInformation("View cart method Starting.");
             try
             {
-                var (carts, totalPrice) = _db.ViewCart(userId);
+                var (carts, totalPrice) = await _db.ViewCart(userId);
 
                 if (carts.Count == 0)
                 {
@@ -276,13 +276,13 @@ namespace Jupeta.Controllers
 
         [HttpDelete]
         [Route("DeleteItemFromCart")]
-        public IActionResult DeleteItemFromCart(string productId, string userId)
+        public async Task<ActionResult> DeleteItemFromCart(string productId, string userId)
         {
             _logger.LogInformation("Delete item from cart method Starting.");
             try
             {
                 ResponseType type = ResponseType.Success;
-                _db.DeleteItem(productId, userId);
+                await _db.DeleteItem(productId, userId);
 
                 _logger.LogWarning("product deleted successfully");
                 return Ok(ResponseHandler.GetAppResponse(type, "Product deleted from cart successfully"));
