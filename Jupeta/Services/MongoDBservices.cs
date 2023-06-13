@@ -4,8 +4,12 @@ using Jupeta.Models.ResponseModels;
 using Microsoft.IdentityModel.Tokens;
 using MongoDB.Driver;
 using System.IdentityModel.Tokens.Jwt;
+using System.Net.Http;
 using System.Security.Claims;
 using System.Text;
+using Newtonsoft.Json;
+using Microsoft.Extensions.Configuration;
+
 
 namespace Jupeta.Services
 {
@@ -17,9 +21,10 @@ namespace Jupeta.Services
         private readonly IConfiguration _config;
         private readonly IHttpContextAccessor _httpContextAccessor;
         private readonly IFileService _fileService;
+        private readonly HttpClient _httpClient;
 
         public MongoDBservices(IMongoDBSettings mongoSettings, IConfiguration config, IMongoClient mongoClient,
-            IHttpContextAccessor httpContextAccessor, IFileService fileService)
+            IHttpContextAccessor httpContextAccessor, IFileService fileService, HttpClient httpClient)
         {
             //MongoClient client = new MongoClient(mongoSettings.ConnectionURI);
             var database = mongoClient.GetDatabase(mongoSettings.DatabaseName);
@@ -29,6 +34,7 @@ namespace Jupeta.Services
             _config = config;
             _httpContextAccessor = httpContextAccessor;
             _fileService = fileService;
+            _httpClient = httpClient;
         }
 
 
@@ -43,6 +49,49 @@ namespace Jupeta.Services
             }
             else throw new Exception("invalid");
 
+        }
+
+        private async Task<bool> IsPhoneValid(long? phoneNumber)
+        {         
+            if (!phoneNumber.HasValue)
+            {
+                return false;
+            }
+            var accesskey = _config.GetValue<string>("accesskey");
+            var apiUrl = $"http://apilayer.net/api/validate?access_key={accesskey}&number={phoneNumber}";
+
+            try
+            {
+                var response = await _httpClient.GetAsync(apiUrl);
+                response.EnsureSuccessStatusCode();
+
+                var responseData = await response.Content.ReadAsStringAsync();
+                var validationResponse = JsonConvert.DeserializeObject<PhoneNumberValidationResponse>(responseData)!;
+                if (validationResponse.valid)
+                {
+                    return true; // Set the return value to true if the "valid" property is true
+                }
+            }
+            catch (Exception ex)
+            {
+                throw new Exception(ex.Message);
+            }
+
+            return false; 
+        }
+
+        private class PhoneNumberValidationResponse
+        {
+            public bool valid { get; set; }
+            public string? number { get; set; }
+            public string? local_format { get; set; }
+            public string? international_format { get; set; }
+            public string? country_prefix { get; set; }
+            public string? country_code { get; set; }
+            public string? country_name { get; set; }
+            public string? location { get; set; }
+            public string? carrier { get; set; }
+            public string? line_type { get; set; }
         }
 
         //get all Users
@@ -62,6 +111,12 @@ namespace Jupeta.Services
             }
             var passwordHash = CreatePasswordhash(user.Password);
 
+            // Validate phone number
+            if (!await IsPhoneValid(user.PhoneNumber))
+            {
+                throw new Exception("Invalid Phone Number");
+            }
+
             UserReg dbTable = new()
             {
                 FirstName = user.FirstName,
@@ -77,26 +132,48 @@ namespace Jupeta.Services
         }
 
 
-        // Edit user profile
-        //public void EditUser(AddUserModel user)
-        //{
-        //    //check if email exists
-        //    var IsEmail = _users.Find(p => p.Email == user.Email).FirstOrDefault();
-        //    if (IsEmail is not null)
-        //    {
-        //        UserReg dbTable = new()
-        //        {
-        //            FirstName = user.FirstName,
-        //            LastName = user.LastName,
-        //            Email = user.Email,
-        //            PhoneNumber = user.PhoneNumber,
-        //            DateOfBirth = user.DateOfBirth,
-        //            CreatedOn = DateTime.UtcNow
-        //        };
-        //    }
-        //    _users.InsertOne(dbTable);
+        //Edit user profile
+        public async Task EditUser(EditUserModel user)
+        {
+            //check if email exists and set inputted fields
+            try
+            {
+                var filter = Builders<UserReg>.Filter.Eq(u => u.Email, user.Email);
+                var update = Builders<UserReg>.Update.Set(u => u.ModifiedOn, DateTime.UtcNow);
 
-        //}
+                if (!string.IsNullOrEmpty(user.FirstName))
+                {
+                    update = update.Set(u => u.FirstName, user.FirstName);
+                }
+
+                if (!string.IsNullOrEmpty(user.LastName))
+                {
+                    update = update.Set(u => u.LastName, user.LastName);
+                }
+
+                if (user.PhoneNumber.HasValue)
+                {
+                    // Validate phone number
+                    if (!await IsPhoneValid(user.PhoneNumber))
+                    {
+                        throw new Exception("Invalid Phone Number");
+                    }
+                    update = update.Set(u => u.PhoneNumber, user.PhoneNumber.Value);
+                }
+
+                if (user.DateOfBirth.HasValue)
+                {
+                    update = update.Set(u => u.DateOfBirth, user.DateOfBirth);
+                }
+
+                await _users.UpdateOneAsync(filter, update);
+            }
+            catch (Exception ex)
+            {
+                throw new Exception(ex.Message);
+            }
+
+        }
 
 
         //Login 
@@ -123,7 +200,7 @@ namespace Jupeta.Services
                     throw new Exception("Email or Password is Incorrect");
                 }
             }
-            throw new Exception("User Not Found");
+            throw new Exception("Email or Password is Incorrect");
         }
 
 
@@ -171,7 +248,7 @@ namespace Jupeta.Services
                         IsAvailable = product.IsAvailable,
                         Quantity = product.Quantity,
                         ProductImage = id, // getting name of image
-                        ImageFileUrl = "https://jupetaprojects3.s3.amazonaws.com/product_images/" + imageId+".png",
+                        ImageFileUrl = "https://jupetaprojects3.s3.amazonaws.com/product_images/" + imageId + ".png",
                         AddedAt = DateTime.UtcNow
                     };
                     await _products.InsertOneAsync(dbTable);
@@ -186,7 +263,7 @@ namespace Jupeta.Services
         //get product by id
         public async Task<Products> GetProductById(string id)
         {
-             return await Task.Run(() => _products.Find(product => product.Id == id).FirstOrDefault());
+            return await Task.Run(() => _products.Find(product => product.Id == id).FirstOrDefault());
         }
 
 

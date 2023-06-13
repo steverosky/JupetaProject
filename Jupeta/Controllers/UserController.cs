@@ -44,7 +44,7 @@ namespace Jupeta.Controllers
             }
             catch (Exception ex)
             {
-
+                _logger.LogError(ex.Message);
                 return BadRequest(ResponseHandler.GetExceptionResponse(ex));
             }
         }
@@ -70,7 +70,7 @@ namespace Jupeta.Controllers
             }
             catch (Exception ex)
             {
-
+                _logger.LogError(ex.Message);
                 return BadRequest(ResponseHandler.GetExceptionResponse(ex));
             }
         }
@@ -95,7 +95,32 @@ namespace Jupeta.Controllers
             }
             catch (Exception ex)
             {
+                _logger.LogError(ex.Message);
+                return BadRequest(ResponseHandler.GetExceptionResponse(ex));
+            }
+        }
 
+        //[Authorize]
+        [HttpPut]
+        [Route("EditProfile")]
+        public async Task<ActionResult> EditProfile([FromBody] EditUserModel user)
+        {
+            _logger.LogInformation("Edit user method Starting.");
+            if (!ModelState.IsValid)
+            {
+                return BadRequest(ModelState);
+            }
+            try
+            {
+                ResponseType type = ResponseType.Success;
+                await _db.EditUser(user);
+
+                _logger.LogInformation($"User {user.Email} edited successfully");
+                return Ok(ResponseHandler.GetAppResponse(type, _db.GetUser(user.Email)));
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError(ex.Message);
                 return BadRequest(ResponseHandler.GetExceptionResponse(ex));
             }
         }
@@ -122,7 +147,7 @@ namespace Jupeta.Controllers
 
             catch (Exception ex)
             {
-
+                _logger.LogError(ex.Message);
                 return BadRequest(ResponseHandler.GetExceptionResponse(ex));
             }
         }
@@ -148,7 +173,7 @@ namespace Jupeta.Controllers
             }
             catch (Exception ex)
             {
-
+                _logger.LogError(ex.Message);
                 return BadRequest(ResponseHandler.GetExceptionResponse(ex));
             }
         }
@@ -173,7 +198,7 @@ namespace Jupeta.Controllers
             }
             catch (Exception ex)
             {
-
+                _logger.LogError(ex.Message);
                 return BadRequest(ResponseHandler.GetExceptionResponse(ex));
             }
         }
@@ -197,7 +222,7 @@ namespace Jupeta.Controllers
             }
             catch (Exception ex)
             {
-
+                _logger.LogError(ex.Message);
                 return BadRequest(ResponseHandler.GetExceptionResponse(ex));
             }
         }
@@ -222,7 +247,7 @@ namespace Jupeta.Controllers
             }
             catch (Exception ex)
             {
-
+                _logger.LogError(ex.Message);
                 return BadRequest(ResponseHandler.GetExceptionResponse(ex));
             }
         }
@@ -243,7 +268,7 @@ namespace Jupeta.Controllers
             }
             catch (Exception ex)
             {
-
+                _logger.LogError(ex.Message);
                 return BadRequest(ResponseHandler.GetExceptionResponse(ex));
             }
         }
@@ -269,7 +294,7 @@ namespace Jupeta.Controllers
             }
             catch (Exception ex)
             {
-
+                _logger.LogError(ex.Message);
                 return BadRequest(ResponseHandler.GetExceptionResponse(ex));
             }
         }
@@ -289,7 +314,7 @@ namespace Jupeta.Controllers
             }
             catch (Exception ex)
             {
-
+                _logger.LogError(ex.Message);
                 return BadRequest(ResponseHandler.GetExceptionResponse(ex));
             }
         }

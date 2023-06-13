@@ -27,6 +27,7 @@ builder.Services.AddCors(options =>
     .AllowAnyMethod()
     .AllowAnyHeader()));
 
+builder.Services.AddHttpClient();
 
 //add jwt authentication services to program
 builder.Services.AddAuthentication(options =>

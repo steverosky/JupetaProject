@@ -17,12 +17,13 @@ namespace Jupeta.Models.DBModels
         [BsonElement("passwordHash")]
         public string PasswordHash { get; set; } = string.Empty;
         [BsonElement("phoneNumber")]
-        public int PhoneNumber { get; set; }
+        public long? PhoneNumber { get; set; }
         [BsonElement("dateOfBirth")]
         [BsonDateTimeOptions(Kind = DateTimeKind.Utc)]
         public DateTime DateOfBirth { get; set; }
         [BsonDateTimeOptions(Kind = DateTimeKind.Utc)]
         public DateTime CreatedOn { get; set; }
+        public DateTime ModifiedOn { get; set; }
 
     }
 }

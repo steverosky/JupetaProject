@@ -8,6 +8,7 @@ namespace Jupeta.Services
         public List<UserReg> GetUsers();
         public UserReg GetUser(string email);
         public Task AddUser(AddUserModel user);
+        public Task EditUser(EditUserModel user);
         public Task<object> Login(UserLogin user);
         public string CreateToken(UserLogin user);
         public Task AddProduct(AddProductModel product);
