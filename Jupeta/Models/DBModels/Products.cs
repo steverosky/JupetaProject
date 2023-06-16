@@ -22,6 +22,8 @@ namespace Jupeta.Models.DBModels
         public bool IsAvailable { get; set; } = true;
         [BsonElement("quantity")]
         public int Quantity { get; set; }
+        [BsonElement("category")]
+        public Categories? Category { get; set; }
         [BsonElement("addedAt")]
         [BsonDateTimeOptions]
         public DateTime AddedAt { get; set; }
@@ -33,3 +35,5 @@ namespace Jupeta.Models.DBModels
         public FormFile? ImageFile { get; set; }
     }
 }
+
+//make category required

@@ -3,12 +3,10 @@ using Jupeta.Models.RequestModels;
 using Jupeta.Models.ResponseModels;
 using Microsoft.IdentityModel.Tokens;
 using MongoDB.Driver;
+using Newtonsoft.Json;
 using System.IdentityModel.Tokens.Jwt;
-using System.Net.Http;
 using System.Security.Claims;
 using System.Text;
-using Newtonsoft.Json;
-using Microsoft.Extensions.Configuration;
 
 
 namespace Jupeta.Services
@@ -18,6 +16,7 @@ namespace Jupeta.Services
         private readonly IMongoCollection<UserReg> _users;
         private readonly IMongoCollection<Products> _products;
         private readonly IMongoCollection<Carts> _carts;
+        private readonly IMongoCollection<Categories> _categories;
         private readonly IConfiguration _config;
         private readonly IHttpContextAccessor _httpContextAccessor;
         private readonly IFileService _fileService;
@@ -31,6 +30,7 @@ namespace Jupeta.Services
             _users = database.GetCollection<UserReg>("users");
             _products = database.GetCollection<Products>("products");
             _carts = database.GetCollection<Carts>("carts");
+            _categories = database.GetCollection<Categories>("categories");
             _config = config;
             _httpContextAccessor = httpContextAccessor;
             _fileService = fileService;
@@ -52,7 +52,7 @@ namespace Jupeta.Services
         }
 
         private async Task<bool> IsPhoneValid(long? phoneNumber)
-        {         
+        {
             if (!phoneNumber.HasValue)
             {
                 return false;
@@ -77,7 +77,7 @@ namespace Jupeta.Services
                 throw new Exception(ex.Message);
             }
 
-            return false; 
+            return false;
         }
 
         private class PhoneNumberValidationResponse
@@ -280,6 +280,17 @@ namespace Jupeta.Services
             return await Task.Run(() => _products.Find(p => p.IsAvailable == true).ToList());
         }
 
+        //create a category
+        public async Task CreateCategory(Categories model)
+        {
+            var CategoryExists = await _categories.FindAsync(c => c.Name.ToLower().Contains(model.Name.ToLower()));
+            if (CategoryExists is not null)
+            {
+                throw new Exception("Category already exists");
+            }
+            await _categories.InsertOneAsync(model);
+        }
+
         //add to cart
         public async Task AddToCart(string id, string userId)
         {
@@ -328,3 +339,5 @@ namespace Jupeta.Services
         }
     }
 }
+
+//cascade delete and update on product changes
