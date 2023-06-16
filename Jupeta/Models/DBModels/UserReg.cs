@@ -21,8 +21,11 @@ namespace Jupeta.Models.DBModels
         [BsonElement("dateOfBirth")]
         [BsonDateTimeOptions(Kind = DateTimeKind.Utc)]
         public DateTime DateOfBirth { get; set; }
+        [BsonElement("addedOn")]
         [BsonDateTimeOptions(Kind = DateTimeKind.Utc)]
         public DateTime CreatedOn { get; set; }
+        [BsonDateTimeOptions(Kind = DateTimeKind.Utc)]
+        [BsonElement("modifiedOn")]
         public DateTime ModifiedOn { get; set; }
 
     }

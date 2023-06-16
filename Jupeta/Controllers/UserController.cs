@@ -7,7 +7,7 @@ using Microsoft.AspNetCore.Mvc;
 
 namespace Jupeta.Controllers
 {
-    //[Authorize]
+    [Authorize]
     [Route("api/[controller]")]
     [ApiController]
     public class UserController : ControllerBase
@@ -252,6 +252,30 @@ namespace Jupeta.Controllers
             }
         }
 
+        [HttpPost]
+        [Route("AddCategory")]
+        public async Task<IActionResult> AddCategory(Categories model)
+        {
+            _logger.LogInformation("Add categories method Starting.");
+            if (!ModelState.IsValid)
+            {
+                return BadRequest(ModelState);
+            }
+            try
+            {
+                ResponseType type = ResponseType.Success;
+                await _db.CreateCategory(model);
+
+                _logger.LogWarning($"product {model.Name} added successfully");
+                return Ok(ResponseHandler.GetAppResponse(type, model));
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError(ex.Message);
+                return BadRequest(ResponseHandler.GetExceptionResponse(ex));
+            }
+        }
+
 
         [HttpPost]
         [Route("AddToCart")]
@@ -284,7 +308,7 @@ namespace Jupeta.Controllers
             {
                 var (carts, totalPrice) = await _db.ViewCart(userId);
 
-                if (carts.Count == 0)
+                if (carts is null)
                 {
                     type = ResponseType.NotFound;
                 }

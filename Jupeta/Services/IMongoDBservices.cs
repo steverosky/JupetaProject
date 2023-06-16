@@ -16,8 +16,9 @@ namespace Jupeta.Services
         public Task<List<Products>> GetAllProducts();
         public Task<List<Products>> GetAvailableProducts();
         public Task AddToCart(string id, string userId);
-        public Task<(List<Carts> carts, double totalPrice)> ViewCart(string id);
+        public Task<(Carts carts, double totalPrice)> ViewCart(string id);
         public Task DeleteItem(string id, string userId);
+        public Task CreateCategory(Categories model);
 
     }
 }

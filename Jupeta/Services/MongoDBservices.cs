@@ -3,12 +3,10 @@ using Jupeta.Models.RequestModels;
 using Jupeta.Models.ResponseModels;
 using Microsoft.IdentityModel.Tokens;
 using MongoDB.Driver;
+using Newtonsoft.Json;
 using System.IdentityModel.Tokens.Jwt;
-using System.Net.Http;
 using System.Security.Claims;
 using System.Text;
-using Newtonsoft.Json;
-using Microsoft.Extensions.Configuration;
 
 
 namespace Jupeta.Services
@@ -18,6 +16,7 @@ namespace Jupeta.Services
         private readonly IMongoCollection<UserReg> _users;
         private readonly IMongoCollection<Products> _products;
         private readonly IMongoCollection<Carts> _carts;
+        private readonly IMongoCollection<Categories> _categories;
         private readonly IConfiguration _config;
         private readonly IHttpContextAccessor _httpContextAccessor;
         private readonly IFileService _fileService;
@@ -31,6 +30,7 @@ namespace Jupeta.Services
             _users = database.GetCollection<UserReg>("users");
             _products = database.GetCollection<Products>("products");
             _carts = database.GetCollection<Carts>("carts");
+            _categories = database.GetCollection<Categories>("categories");
             _config = config;
             _httpContextAccessor = httpContextAccessor;
             _fileService = fileService;
@@ -52,7 +52,7 @@ namespace Jupeta.Services
         }
 
         private async Task<bool> IsPhoneValid(long? phoneNumber)
-        {         
+        {
             if (!phoneNumber.HasValue)
             {
                 return false;
@@ -77,7 +77,7 @@ namespace Jupeta.Services
                 throw new Exception(ex.Message);
             }
 
-            return false; 
+            return false;
         }
 
         private class PhoneNumberValidationResponse
@@ -95,7 +95,7 @@ namespace Jupeta.Services
         }
 
         //get all Users
-        public List<UserReg> GetUsers() => _users.Find(user => true).ToList();
+        public List<UserReg> GetUsers() => _users.Find(user => true).SortByDescending(user => user.CreatedOn).ToList();
 
         //Get User by email
         public UserReg GetUser(string email) => _users.Find<UserReg>(user => user.Email == email).FirstOrDefault();
@@ -271,46 +271,95 @@ namespace Jupeta.Services
         //get all products
         public async Task<List<Products>> GetAllProducts()
         {
-            return await Task.Run(() => _products.Find(p => true).ToList());
+            return await Task.Run(() => _products.Find(p => true).SortByDescending(p => p.AddedAt).ToList());
         }
 
         //get available products
         public async Task<List<Products>> GetAvailableProducts()
         {
-            return await Task.Run(() => _products.Find(p => p.IsAvailable == true).ToList());
+            return await Task.Run(() => _products.Find(p => p.IsAvailable == true).SortByDescending(p => p.AddedAt).ToList());
+        }
+
+        //create a category
+        public async Task CreateCategory(Categories model)
+        {
+            var CategoryExists = await _categories.FindAsync(c => c.Name.ToLower().Contains(model.Name.ToLower()));
+            if (CategoryExists is not null)
+            {
+                throw new Exception("Category already exists");
+            }
+            await _categories.InsertOneAsync(model);
         }
 
         //add to cart
         public async Task AddToCart(string id, string userId)
         {
             var product = await _products.Find(p => p.Id == id).FirstOrDefaultAsync();
-            if (!product.IsAvailable == false)
+            var existingCart = await _carts.Find(c => c.UserId == userId).FirstOrDefaultAsync();
+
+            if (product.IsAvailable == false)
             {
-                Carts dbCart = new()
+                throw new Exception("Product is out of stock");
+            }
+            if (existingCart is null)
+            {
+                // Create a new cart if the user doesn't have one
+                Carts newCart = new()
                 {
                     UserId = userId,
-                    ProductId = product.Id,
+                    DateAdded = DateTime.UtcNow,
+                    Products = new List<Products>
+                    {
+                        new Products
+                        {
+                            Id = product.Id,
+                            ProductName = product.ProductName,
+                            ProductImage = product.ProductImage,
+                            Price = product.Price,
+                            Quantity = product.Quantity,
+                            ImageFileUrl = product.ImageFileUrl,
+                            AddedAt = product.AddedAt
+                        }
+                    }
+                };
+
+                await _carts.InsertOneAsync(newCart);
+            }
+            else
+            {
+                // Add the product to the existing cart's product list
+                existingCart.Products!.Add(new Products
+                {
+                    Id = product.Id,
                     ProductName = product.ProductName,
                     ProductImage = product.ProductImage,
                     Price = product.Price,
                     Quantity = product.Quantity,
-                    DateAdded = product.AddedAt
-                };
-                await _carts.InsertOneAsync(dbCart);
+                    ImageFileUrl = product.ImageFileUrl,
+                    AddedAt = product.AddedAt
+                });
+                //Update cart with new product entry
+                var update = Builders<Carts>.Update.Set(c => c.Products, existingCart.Products);
+                await _carts.UpdateOneAsync(c => c.UserId == userId, update);
             }
-            else throw new Exception("Product is out of stock");
 
         }
 
         //view cart
-        public async Task<(List<Carts> carts, double totalPrice)> ViewCart(string id)
+        public async Task<(Carts carts, double totalPrice)> ViewCart(string id)
         {
-            var carts = await _carts.Find(c => c.UserId == id).ToListAsync();
+            var carts = await _carts.Find(c => c.UserId == id).FirstOrDefaultAsync();
             double totalPrice = 0;
-
-            foreach (var cart in carts)
+            if (carts is null)
             {
-                totalPrice += cart.Price;
+                throw new Exception("Your Cart is empty");
+            }
+            else
+            {
+                foreach (var product in carts.Products!)
+                {
+                    totalPrice += product.Price;
+                }
             }
 
             return (carts, totalPrice);
@@ -320,11 +369,25 @@ namespace Jupeta.Services
         //delete item from cart
         public async Task DeleteItem(string id, string userId)
         {
-            var carts = await _carts.DeleteOneAsync(c => c.UserId == userId && c.ProductId == id);
-            if (carts.DeletedCount is not > 0)
+            var carts = await _carts.Find(c => c.UserId == id).FirstOrDefaultAsync();
+            if (carts is null)
             {
-                throw new Exception("Error deleting item");
+                throw new Exception("Your Cart is empty");
             }
+            else                        
+            {
+                var filter = Builders<Carts>.Filter.And(
+                    Builders<Carts>.Filter.Eq(c => c.UserId, userId),
+                    Builders<Carts>.Filter.ElemMatch(c => c.Products, p => p.Id == id)
+                );
+
+                var update = Builders<Carts>.Update.PullFilter(c => c.Products, p => p.Id == id);
+
+                await _carts.UpdateOneAsync(filter, update);
+            }
+
         }
     }
 }
+
+//cascade delete and update on product changes
