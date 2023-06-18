@@ -38,13 +38,13 @@ builder.Services.AddAuthentication(options =>
 })
 .AddJwtBearer(jwt =>
 {
-    var key = new SymmetricSecurityKey(Encoding.UTF8.GetBytes(builder.Configuration["JwtConfig:Secret"]!));
+    var key = Encoding.UTF8.GetBytes(builder.Configuration["JwtConfig:Secret"]!);
     jwt.SaveToken = true;
     jwt.RequireHttpsMetadata = false;
     jwt.TokenValidationParameters = new TokenValidationParameters
     {
         ValidateIssuerSigningKey = true,
-        IssuerSigningKey = key,
+        IssuerSigningKey = new SymmetricSecurityKey(key),
         ValidateIssuer = true,
         ValidateAudience = true,
         ValidAudience = builder.Configuration["JwtConfig:Audience"],
