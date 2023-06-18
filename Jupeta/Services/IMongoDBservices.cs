@@ -8,6 +8,7 @@ namespace Jupeta.Services
         public List<UserReg> GetUsers();
         public UserReg GetUser(string email);
         public Task AddUser(AddUserModel user);
+        public Task EditUser(EditUserModel user);
         public Task<object> Login(UserLogin user);
         public string CreateToken(UserLogin user);
         public Task AddProduct(AddProductModel product);
@@ -15,8 +16,9 @@ namespace Jupeta.Services
         public Task<List<Products>> GetAllProducts();
         public Task<List<Products>> GetAvailableProducts();
         public Task AddToCart(string id, string userId);
-        public Task<(List<Carts> carts, double totalPrice)> ViewCart(string id);
+        public Task<(Carts carts, double totalPrice)> ViewCart(string id);
         public Task DeleteItem(string id, string userId);
-
+        public Task CreateCategory(Categories model);
+        public Task<List<Products>> SearchSortBy(string? sortBy, string? keyword, bool isDescending);
     }
 }

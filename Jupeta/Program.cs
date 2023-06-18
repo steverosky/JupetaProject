@@ -27,6 +27,7 @@ builder.Services.AddCors(options =>
     .AllowAnyMethod()
     .AllowAnyHeader()));
 
+builder.Services.AddHttpClient();
 
 //add jwt authentication services to program
 builder.Services.AddAuthentication(options =>
@@ -37,7 +38,7 @@ builder.Services.AddAuthentication(options =>
 })
 .AddJwtBearer(jwt =>
 {
-    var key = Encoding.ASCII.GetBytes(builder.Configuration["JwtConfig:Secret"]!);
+    var key = Encoding.UTF8.GetBytes(builder.Configuration["JwtConfig:Secret"]!);
     jwt.SaveToken = true;
     jwt.RequireHttpsMetadata = false;
     jwt.TokenValidationParameters = new TokenValidationParameters

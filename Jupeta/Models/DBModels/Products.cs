@@ -22,14 +22,22 @@ namespace Jupeta.Models.DBModels
         public bool IsAvailable { get; set; } = true;
         [BsonElement("quantity")]
         public int Quantity { get; set; }
-        [BsonElement("addedAt")]
-        [BsonDateTimeOptions]
-        public DateTime AddedAt { get; set; }
+        [BsonElement("category")]
+        public Categories? Category { get; set; }
         [BsonElement("productImage")]
         public Guid ProductImage { get; set; }
         [BsonElement("imageFile")]
         public object? ImageFileUrl { get; set; } = string.Empty;
         [BsonIgnore]
         public FormFile? ImageFile { get; set; }
+        [BsonElement("addedAt")]
+        [BsonDateTimeOptions(Kind = DateTimeKind.Utc)]
+        public DateTime AddedAt { get; set; }
+        [BsonDateTimeOptions(Kind = DateTimeKind.Utc)]
+        [BsonElement("modifiedOn")]
+        public DateTime ModifiedOn { get; set; }
+
     }
 }
+
+//make category required

@@ -4,10 +4,12 @@ using Jupeta.Models.ResponseModels;
 using Jupeta.Services;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
+using System.IdentityModel.Tokens.Jwt;
+
 
 namespace Jupeta.Controllers
 {
-    //[Authorize]
+    //[Authorize(AuthenticationSchemes = "Bearer")]
     [Route("api/[controller]")]
     [ApiController]
     public class UserController : ControllerBase
@@ -44,7 +46,7 @@ namespace Jupeta.Controllers
             }
             catch (Exception ex)
             {
-
+                _logger.LogError(ex.Message);
                 return BadRequest(ResponseHandler.GetExceptionResponse(ex));
             }
         }
@@ -70,7 +72,7 @@ namespace Jupeta.Controllers
             }
             catch (Exception ex)
             {
-
+                _logger.LogError(ex.Message);
                 return BadRequest(ResponseHandler.GetExceptionResponse(ex));
             }
         }
@@ -95,7 +97,32 @@ namespace Jupeta.Controllers
             }
             catch (Exception ex)
             {
+                _logger.LogError(ex.Message);
+                return BadRequest(ResponseHandler.GetExceptionResponse(ex));
+            }
+        }
 
+        //[Authorize]
+        [HttpPut]
+        [Route("EditProfile")]
+        public async Task<ActionResult> EditProfile([FromBody] EditUserModel user)
+        {
+            _logger.LogInformation("Edit user method Starting.");
+            if (!ModelState.IsValid)
+            {
+                return BadRequest(ModelState);
+            }
+            try
+            {
+                ResponseType type = ResponseType.Success;
+                await _db.EditUser(user);
+
+                _logger.LogInformation($"User {user.Email} edited successfully");
+                return Ok(ResponseHandler.GetAppResponse(type, _db.GetUser(user.Email)));
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError(ex.Message);
                 return BadRequest(ResponseHandler.GetExceptionResponse(ex));
             }
         }
@@ -122,13 +149,13 @@ namespace Jupeta.Controllers
 
             catch (Exception ex)
             {
-
+                _logger.LogError(ex.Message);
                 return BadRequest(ResponseHandler.GetExceptionResponse(ex));
             }
         }
 
 
-
+        //[Authorize(AuthenticationSchemes = "Bearer")]
         [HttpGet]
         [Route("GetAllProducts")]
         public async Task<ActionResult<List<Products>>> GetAllProducts()
@@ -148,7 +175,7 @@ namespace Jupeta.Controllers
             }
             catch (Exception ex)
             {
-
+                _logger.LogError(ex.Message);
                 return BadRequest(ResponseHandler.GetExceptionResponse(ex));
             }
         }
@@ -173,14 +200,14 @@ namespace Jupeta.Controllers
             }
             catch (Exception ex)
             {
-
+                _logger.LogError(ex.Message);
                 return BadRequest(ResponseHandler.GetExceptionResponse(ex));
             }
         }
 
 
         [HttpGet]
-        [Route("GetProductById/{id}")]
+        [Route("GetProductById")]
         public async Task<ActionResult<UserReg>> GetProductById(string id)
         {
             _logger.LogInformation("Get product by Id method Starting.");
@@ -197,7 +224,7 @@ namespace Jupeta.Controllers
             }
             catch (Exception ex)
             {
-
+                _logger.LogError(ex.Message);
                 return BadRequest(ResponseHandler.GetExceptionResponse(ex));
             }
         }
@@ -222,7 +249,31 @@ namespace Jupeta.Controllers
             }
             catch (Exception ex)
             {
+                _logger.LogError(ex.Message);
+                return BadRequest(ResponseHandler.GetExceptionResponse(ex));
+            }
+        }
 
+        [HttpPost]
+        [Route("AddCategory")]
+        public async Task<IActionResult> AddCategory(Categories model)
+        {
+            _logger.LogInformation("Add categories method Starting.");
+            if (!ModelState.IsValid)
+            {
+                return BadRequest(ModelState);
+            }
+            try
+            {
+                ResponseType type = ResponseType.Success;
+                await _db.CreateCategory(model);
+
+                _logger.LogWarning($"product {model.Name} added successfully");
+                return Ok(ResponseHandler.GetAppResponse(type, model));
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError(ex.Message);
                 return BadRequest(ResponseHandler.GetExceptionResponse(ex));
             }
         }
@@ -243,7 +294,7 @@ namespace Jupeta.Controllers
             }
             catch (Exception ex)
             {
-
+                _logger.LogError(ex.Message);
                 return BadRequest(ResponseHandler.GetExceptionResponse(ex));
             }
         }
@@ -259,7 +310,7 @@ namespace Jupeta.Controllers
             {
                 var (carts, totalPrice) = await _db.ViewCart(userId);
 
-                if (carts.Count == 0)
+                if (carts is null)
                 {
                     type = ResponseType.NotFound;
                 }
@@ -269,7 +320,7 @@ namespace Jupeta.Controllers
             }
             catch (Exception ex)
             {
-
+                _logger.LogError(ex.Message);
                 return BadRequest(ResponseHandler.GetExceptionResponse(ex));
             }
         }
@@ -289,7 +340,31 @@ namespace Jupeta.Controllers
             }
             catch (Exception ex)
             {
+                _logger.LogError(ex.Message);
+                return BadRequest(ResponseHandler.GetExceptionResponse(ex));
+            }
+        }
 
+        [HttpGet]
+        [Route("SearchSort")]
+        public async Task<ActionResult<List<Products>>> SearchSort(string? sortBy, string? keyword, bool isDescending)
+        {
+            _logger.LogInformation("Search products method Starting.");
+            ResponseType type = ResponseType.Success;
+            try
+            {
+                var data = await _db.SearchSortBy(sortBy, keyword, isDescending);
+
+                if (data == null)
+                {
+                    type = ResponseType.NotFound;
+                }
+                return Ok(ResponseHandler.GetAppResponse(type, data));
+
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError(ex.Message);
                 return BadRequest(ResponseHandler.GetExceptionResponse(ex));
             }
         }
