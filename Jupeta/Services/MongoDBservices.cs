@@ -442,22 +442,4 @@ namespace Jupeta.Services
 
 //products = await _products.Find(p => true && p.IsAvailable == true).Sort(sortDefinition).ToListAsync();
 
-
-        //        return await query.Skip((page - 1) * page_size).Take(page_size).ToListAsync();
-        //    }
-        //}
-
-    }
-}
-//another way to do SWITCH expression
-//     SortDefinition<Products> sortDefinition = sortBy switch
-//                {
-//                    "name" => isDescending ? Builders<Products>.Sort.Descending(p => p.ProductName) : Builders<Products>.Sort.Ascending(p => p.ProductName),
-//                    "price" => isDescending? Builders<Products>.Sort.Descending(p => p.Price) : Builders<Products>.Sort.Ascending(p => p.Price),
-//                    "date" => isDescending? Builders<Products>.Sort.Descending(p => p.AddedAt) : Builders<Products>.Sort.Ascending(p => p.AddedAt),
-//                    _ => throw new ArgumentException("Invalid sort parameter."),
-//                };
-
-//products = await _products.Find(p => true && p.IsAvailable == true).Sort(sortDefinition).ToListAsync();
-
 //cascade delete and update on product changes
