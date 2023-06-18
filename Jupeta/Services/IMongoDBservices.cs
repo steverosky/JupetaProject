@@ -19,6 +19,6 @@ namespace Jupeta.Services
         public Task<(Carts carts, double totalPrice)> ViewCart(string id);
         public Task DeleteItem(string id, string userId);
         public Task CreateCategory(Categories model);
-
+        public Task<List<Products>> SearchSortBy(string? sortBy, string? keyword, bool isDescending);
     }
 }

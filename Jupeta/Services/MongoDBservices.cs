@@ -181,26 +181,24 @@ namespace Jupeta.Services
         {
             var dbUser = await _users.Find(x => x.Email == user.Email).FirstOrDefaultAsync();
 
-            if (dbUser != null)
+            if (dbUser == null)
             {
-                bool isPasswordValid = BCrypt.Net.BCrypt.Verify(user.PasswordHash, dbUser.PasswordHash);
-                if (isPasswordValid)
-                {
-                    string token = CreateToken(user);
-                    return new TokenResponse
-                    {
-                        Id = dbUser.Id,
-                        Email = user.Email,
-                        Token = token
-                    };
-
-                }
-                else
-                {
-                    throw new Exception("Email or Password is Incorrect");
-                }
+                throw new Exception("Email or Password is Incorrect");
             }
-            throw new Exception("Email or Password is Incorrect");
+
+            bool isPasswordValid = BCrypt.Net.BCrypt.Verify(user.PasswordHash, dbUser.PasswordHash);
+            if (!isPasswordValid)
+            {
+                throw new Exception("Email or Password is Incorrect");
+            }
+
+            string token = CreateToken(user);
+            return new TokenResponse
+            {
+                Id = dbUser.Id,
+                Email = user.Email,
+                Token = token
+            };
         }
 
 
@@ -215,7 +213,7 @@ namespace Jupeta.Services
             var key = new SymmetricSecurityKey(Encoding.UTF8.GetBytes(
                 _config.GetSection("JwtConfig:Secret").Value!));
 
-            var cred = new SigningCredentials(key, SecurityAlgorithms.HmacSha512Signature);
+            var cred = new SigningCredentials(key, SecurityAlgorithms.HmacSha512);
 
             var token = new JwtSecurityToken(
                  _config["JwtConfig:Issuer"],
@@ -283,15 +281,15 @@ namespace Jupeta.Services
         //create a category
         public async Task CreateCategory(Categories model)
         {
-            var CategoryExists = await _categories.FindAsync(c => c.Name.ToLower().Contains(model.Name.ToLower()));
-            if (CategoryExists is not null)
+            var categoryExists = await _categories.Find(c => c.Name.ToLower() == model.Name.ToLower()).FirstOrDefaultAsync();
+            if (categoryExists != null)
             {
-                throw new Exception("Category already exists");
+                throw new Exception("Category already exists.");
             }
             await _categories.InsertOneAsync(model);
         }
 
-      
+
         //add to cart
         public async Task AddToCart(string id, string userId)
         {
@@ -375,7 +373,7 @@ namespace Jupeta.Services
             {
                 throw new Exception("Your Cart is empty");
             }
-            else                        
+            else
             {
                 var filter = Builders<Carts>.Filter.And(
                     Builders<Carts>.Filter.Eq(c => c.UserId, userId),
@@ -388,7 +386,60 @@ namespace Jupeta.Services
             }
 
         }
+
+        //sort products
+        public async Task<List<Products>> SearchSortBy(string? sortBy, string? keyword, bool isDescending)
+        {
+            try
+            {
+                //isDescending = true;
+                List<Products> products = new List<Products>();
+                //search
+                if (!string.IsNullOrEmpty(keyword))
+                {
+                    // Apply search filter
+                    products = await _products.Find(p => p.ProductName.ToLower().Contains(keyword.ToLower())).ToListAsync();
+                }
+
+                //sorting                 
+                switch (sortBy)
+                {
+                    case "name":
+                        products = isDescending ? products.OrderByDescending(p => p.ProductName).ToList() : products.OrderBy(p => p.ProductName).ToList();
+                        break;
+                    case "price":
+                        products = isDescending ? products.OrderByDescending(p => p.Price).ToList() : products.OrderBy(p => p.Price).ToList();
+                        break;
+                    case "date":
+                        products = isDescending ? products.OrderByDescending(p => p.AddedAt).ToList() : products.OrderBy(p => p.AddedAt).ToList();
+                        break;
+                    default:
+                        products = products.OrderByDescending(p => p.AddedAt).ToList();
+                        break;
+                }
+
+                return products;
+
+            }
+            catch (Exception ex) { throw new Exception(ex.Message); }
+        }
+
+
+        //        return await query.Skip((page - 1) * page_size).Take(page_size).ToListAsync();
+        //    }
+        //}
+
     }
 }
+//another way to do SWITCH expression
+//     SortDefinition<Products> sortDefinition = sortBy switch
+//                {
+//                    "name" => isDescending ? Builders<Products>.Sort.Descending(p => p.ProductName) : Builders<Products>.Sort.Ascending(p => p.ProductName),
+//                    "price" => isDescending? Builders<Products>.Sort.Descending(p => p.Price) : Builders<Products>.Sort.Ascending(p => p.Price),
+//                    "date" => isDescending? Builders<Products>.Sort.Descending(p => p.AddedAt) : Builders<Products>.Sort.Ascending(p => p.AddedAt),
+//                    _ => throw new ArgumentException("Invalid sort parameter."),
+//                };
+
+//products = await _products.Find(p => true && p.IsAvailable == true).Sort(sortDefinition).ToListAsync();
 
 //cascade delete and update on product changes

@@ -4,10 +4,12 @@ using Jupeta.Models.ResponseModels;
 using Jupeta.Services;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
+using System.IdentityModel.Tokens.Jwt;
+
 
 namespace Jupeta.Controllers
 {
-    [Authorize]
+    //[Authorize(AuthenticationSchemes = "Bearer")]
     [Route("api/[controller]")]
     [ApiController]
     public class UserController : ControllerBase
@@ -153,7 +155,7 @@ namespace Jupeta.Controllers
         }
 
 
-
+        //[Authorize(AuthenticationSchemes = "Bearer")]
         [HttpGet]
         [Route("GetAllProducts")]
         public async Task<ActionResult<List<Products>>> GetAllProducts()
@@ -335,6 +337,30 @@ namespace Jupeta.Controllers
 
                 _logger.LogWarning("product deleted successfully");
                 return Ok(ResponseHandler.GetAppResponse(type, "Product deleted from cart successfully"));
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError(ex.Message);
+                return BadRequest(ResponseHandler.GetExceptionResponse(ex));
+            }
+        }
+
+        [HttpGet]
+        [Route("SearchSort")]
+        public async Task<ActionResult<List<Products>>> SearchSort(string? sortBy, string? keyword, bool isDescending)
+        {
+            _logger.LogInformation("Search products method Starting.");
+            ResponseType type = ResponseType.Success;
+            try
+            {
+                var data = await _db.SearchSortBy(sortBy, keyword, isDescending);
+
+                if (data == null)
+                {
+                    type = ResponseType.NotFound;
+                }
+                return Ok(ResponseHandler.GetAppResponse(type, data));
+
             }
             catch (Exception ex)
             {
