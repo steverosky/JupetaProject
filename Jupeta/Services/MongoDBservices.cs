@@ -281,10 +281,10 @@ namespace Jupeta.Services
         //create a category
         public async Task CreateCategory(Categories model)
         {
-            var CategoryExists = await _categories.FindAsync(c => c.Name.ToLower().Contains(model.Name.ToLower()));
-            if (CategoryExists is not null)
+            var categoryExists = await _categories.Find(c => c.Name.ToLower() == model.Name.ToLower()).FirstOrDefaultAsync();
+            if (categoryExists != null)
             {
-                throw new Exception("Category already exists");
+                throw new Exception("Category already exists.");
             }
             await _categories.InsertOneAsync(model);
         }
@@ -398,7 +398,7 @@ namespace Jupeta.Services
                 if (!string.IsNullOrEmpty(keyword))
                 {
                     // Apply search filter
-                    products = await _products.Find(p => p.ProductName.ToLower().Contains(keyword)).ToListAsync();
+                    products = await _products.Find(p => p.ProductName.ToLower().Contains(keyword.ToLower())).ToListAsync();
                 }
 
                 //sorting                 
