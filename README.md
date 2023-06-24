@@ -21,4 +21,4 @@ An all-in-one ecommerce and live auction website, built with Asp.NET for backend
 - Push to your origin repository
     `git push origin <branch-name>`
 
-- Create a new Pull Request in Github
+- Create a new Pull Request in Github.
