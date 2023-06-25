@@ -1,10 +1,11 @@
-﻿using Jupeta.Models.DBModels;
+﻿using Amazon.S3.Model;
+using Jupeta.Models.DBModels;
 using Jupeta.Models.RequestModels;
 using Jupeta.Models.ResponseModels;
 using Jupeta.Services;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
-using System.IdentityModel.Tokens.Jwt;
+using Newtonsoft.Json;
 
 
 namespace Jupeta.Controllers
@@ -158,17 +159,30 @@ namespace Jupeta.Controllers
         //[Authorize(AuthenticationSchemes = "Bearer")]
         [HttpGet]
         [Route("GetAllProducts")]
-        public async Task<ActionResult<List<Products>>> GetAllProducts()
+        public async Task<ActionResult<List<Products>>> GetAllProducts([FromQuery] PageParameters param)
         {
             _logger.LogInformation("Get all products method Starting.");
             ResponseType type = ResponseType.Success;
             try
             {
-                 var data = await _db.GetAllProducts();
+                 var data = await _db.GetAllProducts(param);
 
                 if (data == null)
                 {
                     type = ResponseType.NotFound;
+                }
+                else
+                {
+                    var metadata = new
+                    {
+                        data.TotalCount,
+                        data.PageSize,
+                        data.CurrentPage,
+                        data.TotalPages,
+                        data.NextPage,
+                        data.PreviousPage
+                    };
+                    Response.Headers.Add("X-Pagination", JsonConvert.SerializeObject(metadata));
                 }
                 return Ok(ResponseHandler.GetAppResponse(type, data));
 
@@ -183,17 +197,30 @@ namespace Jupeta.Controllers
 
         [HttpGet]
         [Route("GetAvailableProducts")]
-        public async Task<ActionResult<List<Products>>> GetAvailableProducts()
+        public async Task<ActionResult<List<Products>>> GetAvailableProducts([FromQuery] PageParameters param)
         {
             _logger.LogInformation("Get all available products method Starting.");
             ResponseType type = ResponseType.Success;
             try
             {
-                IEnumerable<Products> data = await _db.GetAvailableProducts();
+               var data = await _db.GetAvailableProducts(param);
 
                 if (!data.Any())
                 {
                     type = ResponseType.NotFound;
+                }
+                else
+                {
+                    var metadata = new
+                    {
+                        data.TotalCount,
+                        data.PageSize,
+                        data.CurrentPage,
+                        data.TotalPages,
+                        data.NextPage,
+                        data.PreviousPage
+                    };
+                    Response.Headers.Add("X-Pagination", JsonConvert.SerializeObject(metadata));
                 }
                 return Ok(ResponseHandler.GetAppResponse(type, data));
 
@@ -347,17 +374,30 @@ namespace Jupeta.Controllers
 
         [HttpGet]
         [Route("SearchSort")]
-        public async Task<ActionResult<List<Products>>> SearchSort(string? sortBy, string? keyword, bool isDescending)
+        public async Task<ActionResult<List<Products>>> SearchSort(string? sortBy, string? keyword, bool isDescending, [FromQuery]PageParameters param)
         {
             _logger.LogInformation("Search products method Starting.");
             ResponseType type = ResponseType.Success;
             try
             {
-                var data = await _db.SearchSortBy(sortBy, keyword, isDescending);
+                var data = await _db.SearchSortBy(sortBy, keyword, isDescending, param);
 
                 if (data == null)
                 {
                     type = ResponseType.NotFound;
+                }
+                else
+                {
+                    var metadata = new
+                    {
+                        data.TotalCount,
+                        data.PageSize,
+                        data.CurrentPage,
+                        data.TotalPages,
+                        data.NextPage,
+                        data.PreviousPage
+                    };
+                    Response.Headers.Add("X-Pagination", JsonConvert.SerializeObject(metadata));
                 }
                 return Ok(ResponseHandler.GetAppResponse(type, data));
 

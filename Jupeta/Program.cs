@@ -1,3 +1,4 @@
+global using System.Text;
 using Amazon.S3;
 using Jupeta.Models.DBModels;
 using Jupeta.Services;
@@ -9,7 +10,6 @@ using Microsoft.OpenApi.Models;
 using MongoDB.Driver;
 using Serilog;
 using Swashbuckle.AspNetCore.Filters;
-using System.Text;
 
 var builder = WebApplication.CreateBuilder(args);
 

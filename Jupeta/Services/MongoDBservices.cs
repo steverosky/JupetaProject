@@ -6,7 +6,6 @@ using MongoDB.Driver;
 using Newtonsoft.Json;
 using System.IdentityModel.Tokens.Jwt;
 using System.Security.Claims;
-using System.Text;
 
 
 namespace Jupeta.Services
@@ -267,15 +266,24 @@ namespace Jupeta.Services
 
 
         //get all products
-        public async Task<List<Products>> GetAllProducts()
+        public async Task<PagedList<Products>> GetAllProducts(PageParameters param)
         {
-            return await Task.Run(() => _products.Find(p => true).SortByDescending(p => p.AddedAt).ToList());
+            var query = await _products.Find(p => true).SortByDescending(p => p.AddedAt).ToListAsync();
+
+            var pagedList = PagedList<Products>.ToPagedList(query.AsQueryable(), param.PageNumber, param.PageSize);
+
+            return pagedList;
         }
 
+
         //get available products
-        public async Task<List<Products>> GetAvailableProducts()
+        public async Task<PagedList<Products>> GetAvailableProducts(PageParameters param)
         {
-            return await Task.Run(() => _products.Find(p => p.IsAvailable == true).SortByDescending(p => p.AddedAt).ToList());
+            var query = await _products.Find(p => p.IsAvailable == true).SortByDescending(p => p.AddedAt).ToListAsync();
+
+            var pagedList = PagedList<Products>.ToPagedList(query.AsQueryable(), param.PageNumber, param.PageSize);
+
+            return pagedList;
         }
 
         //create a category
@@ -388,7 +396,7 @@ namespace Jupeta.Services
         }
 
         //sort products
-        public async Task<List<Products>> SearchSortBy(string? sortBy, string? keyword, bool isDescending)
+        public async Task<PagedList<Products>> SearchSortBy(string? sortBy, string? keyword, bool isDescending, PageParameters param)
         {
             try
             {
@@ -398,7 +406,8 @@ namespace Jupeta.Services
                 if (!string.IsNullOrEmpty(keyword))
                 {
                     // Apply search filter
-                    products = await _products.Find(p => p.ProductName.ToLower().Contains(keyword.ToLower())).ToListAsync();
+                    products = await _products.Find(p => p.ProductName.ToLower().Contains(keyword.ToLower()) ||
+                                               p.Description.ToLower().Contains(keyword.ToLower())).ToListAsync();
                 }
 
                 //sorting                 
@@ -418,17 +427,13 @@ namespace Jupeta.Services
                         break;
                 }
 
-                return products;
+                var pagedList = PagedList<Products>.ToPagedList(products.AsQueryable(), param.PageNumber, param.PageSize);
+
+                return pagedList;
 
             }
             catch (Exception ex) { throw new Exception(ex.Message); }
         }
-
-
-        //        return await query.Skip((page - 1) * page_size).Take(page_size).ToListAsync();
-        //    }
-        //}
-
     }
 }
 //another way to do SWITCH expression
