@@ -13,12 +13,12 @@ namespace Jupeta.Services
         public string CreateToken(UserLogin user);
         public Task AddProduct(AddProductModel product);
         public Task<Products> GetProductById(string id);
-        public Task<List<Products>> GetAllProducts();
-        public Task<List<Products>> GetAvailableProducts();
+        public Task<PagedList<Products>> GetAllProducts(PageParameters param);
+        public Task<PagedList<Products>> GetAvailableProducts(PageParameters param);
         public Task AddToCart(string id, string userId);
         public Task<(Carts carts, double totalPrice)> ViewCart(string id);
         public Task DeleteItem(string id, string userId);
         public Task CreateCategory(Categories model);
-        public Task<List<Products>> SearchSortBy(string? sortBy, string? keyword, bool isDescending);
+        public Task<PagedList<Products>> SearchSortBy(string? sortBy, string? keyword, bool isDescending, PageParameters param);
     }
 }
