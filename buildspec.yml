@@ -3,7 +3,7 @@
 phases:
   install:
     runtime-versions:
-      dotnet: 5.0
+      dotnet: 7.0.x
 
   pre_build:
     commands:
