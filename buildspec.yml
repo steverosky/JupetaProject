@@ -8,17 +8,17 @@ phases:
   pre_build:
     commands:
       - echo Restore started on `date`
-      - dotnet restore AwsPipelineDemo/AwsPipelineDemo.csproj
+      - dotnet restore Jupeta/Jupeta.csproj
 
   build:
     commands:
       - echo Build started on `date`
-      - dotnet build AwsPipelineDemo/AwsPipelineDemo.csproj
+      - dotnet build Jupeta/Jupeta.csproj
 
   post_build:
     commands:
       - echo Publish started on `date`
-      - dotnet publish -c Release -o ./ AwsPipelineDemo/AwsPipelineDemo.csproj
+      - dotnet publish -c Release -o ./ Jupeta/Jupeta.csproj
 
 artifacts:
   files:
