@@ -2,8 +2,8 @@
 
 phases:
   install:
-    runtime-versions:
-      dotnet: 7.0.x
+    commands:
+      - curl -sSL https://dot.net/v1/dotnet-install.sh | bash /dev/stdin --channel STS
 
   pre_build:
     commands:
