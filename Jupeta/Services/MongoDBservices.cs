@@ -272,7 +272,7 @@ namespace Jupeta.Services
 
             var pagedList = PagedList<Products>.ToPagedList(query.AsQueryable(), param.PageNumber, param.PageSize);
 
-            return pagedList;
+            return await pagedList;
         }
 
 
@@ -283,7 +283,7 @@ namespace Jupeta.Services
 
             var pagedList = PagedList<Products>.ToPagedList(query.AsQueryable(), param.PageNumber, param.PageSize);
 
-            return pagedList;
+            return await pagedList;
         }
 
         //create a category
@@ -429,7 +429,7 @@ namespace Jupeta.Services
 
                 var pagedList = PagedList<Products>.ToPagedList(products.AsQueryable(), param.PageNumber, param.PageSize);
 
-                return pagedList;
+                return await pagedList;
 
             }
             catch (Exception ex) { throw new Exception(ex.Message); }
@@ -445,6 +445,4 @@ namespace Jupeta.Services
 //                    _ => throw new ArgumentException("Invalid sort parameter."),
 //                };
 
-//products = await _products.Find(p => true && p.IsAvailable == true).Sort(sortDefinition).ToListAsync();
-
-//cascade delete and update on product changes
+//cascade delete and update on product changes in cart and product list
