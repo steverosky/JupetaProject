@@ -18,8 +18,8 @@ phases:
   post_build:
     commands:
       - echo Publish started on `date`
-      - dotnet publish -c Release -o ./publish Jupeta/Jupeta.csproj
+      - dotnet publish -c Release -o ./ Jupeta/Jupeta.csproj
 
 artifacts:
   files:
-    - 'publish/*'
+    - ./**/*
