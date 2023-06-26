@@ -27,5 +27,11 @@ jobs:
     - name: Test
       run: dotnet test --no-build --verbosity normal
       
-post_build:
-  - dotnet publish -c Release -o ./ Jupeta/Jupeta.csproj
+    - name: Publish
+      run: dotnet publish --configuration Release --output ./publish
+
+    - name: Archive published artifacts
+      uses: actions/upload-artifact@v2
+      with:
+        name: published-artifacts
+        path: ./publish
