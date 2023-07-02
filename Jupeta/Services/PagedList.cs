@@ -40,10 +40,10 @@ namespace Jupeta.Services
         }
         //public bool HasNextPage => Page * PageSize < TotalCount;
 
-        public static PagedList<T> ToPagedList(List<T> query, int pageNumber, int pageSize)
+        public static PagedList<T> ToPagedList(IQueryable<T> query, int pageNumber, int pageSize)
         {
-            var count =  query.Count();
-            var items = query;
+            var count = query.Count();
+            var items = query.Skip((pageNumber - 1) * pageSize).Take(pageSize).ToList();
 
             return new PagedList<T>(items, count, pageNumber, pageSize);
         }

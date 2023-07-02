@@ -276,12 +276,9 @@ namespace Jupeta.Services
         //get all products
         public async Task<PagedList<Products>> GetAllProducts(PageParameters param)
         {
-            var query = await _products.Find(p => true)
-                         .SortByDescending(p => p.AddedAt)
-                         .Skip((param.PageNumber - 1) * param.PageSize)
-                         .Limit(param.PageSize).ToListAsync();
+            var query = await _products.Find(p => true).SortByDescending(p => p.AddedAt).ToListAsync();
 
-            var pagedList = PagedList<Products>.ToPagedList(query, param.PageNumber, param.PageSize);
+            var pagedList = PagedList<Products>.ToPagedList(query.AsQueryable(), param.PageNumber, param.PageSize);
 
             return pagedList;
         }
@@ -292,7 +289,7 @@ namespace Jupeta.Services
         {
             var query = await _products.Find(p => p.IsAvailable == true).SortByDescending(p => p.AddedAt).ToListAsync();
 
-            var pagedList = PagedList<Products>.ToPagedList(query, param.PageNumber, param.PageSize);
+            var pagedList = PagedList<Products>.ToPagedList(query.AsQueryable(), param.PageNumber, param.PageSize);
 
             return pagedList;
         }
@@ -438,7 +435,7 @@ namespace Jupeta.Services
                         break;
                 }
 
-                var pagedList = PagedList<Products>.ToPagedList(products, param.PageNumber, param.PageSize);
+                var pagedList = PagedList<Products>.ToPagedList(products.AsQueryable(), param.PageNumber, param.PageSize);
 
                 return pagedList;
 
