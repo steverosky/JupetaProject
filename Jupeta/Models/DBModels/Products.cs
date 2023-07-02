@@ -23,7 +23,10 @@ namespace Jupeta.Models.DBModels
         [BsonElement("quantity")]
         public int Quantity { get; set; }
         [BsonElement("category")]
-        public Categories? Category { get; set; }
+        public string Category { get; set; } = string.Empty;
+        [BsonElement("condition")]
+        public string? Condition { get; set; }
+        public string? SellingType { get; set; }
         [BsonElement("productImage")]
         public Guid ProductImage { get; set; }
         [BsonElement("imageFile")]
@@ -38,6 +41,7 @@ namespace Jupeta.Models.DBModels
         public DateTime ModifiedOn { get; set; }
 
     }
+
 }
 
 //make category required

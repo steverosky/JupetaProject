@@ -1,4 +1,5 @@
 global using System.Text;
+global using Microsoft.EntityFrameworkCore;
 using Amazon.S3;
 using Jupeta.Models.DBModels;
 using Jupeta.Services;

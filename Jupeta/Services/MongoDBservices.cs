@@ -231,6 +231,11 @@ namespace Jupeta.Services
         {
             if (product.ImageFile != null)
             {
+                //var isValidCategory = _categories.Find(c=>c.CategoryId == product.CategoryId);
+                //if (isValidCategory == null) 
+                //{
+                //    throw new Exception("Category is Invalid");
+                //}
                 Guid id = Guid.NewGuid();
                 var fileResult = await _fileService.UploadImage(id, product.ImageFile);
                 if (fileResult is not null)
@@ -243,7 +248,10 @@ namespace Jupeta.Services
                         Summary = product.Summary,
                         Price = product.Price,
                         IsAvailable = product.IsAvailable,
+                        Condition = product.Condition.ToString(),
                         Quantity = product.Quantity,
+                        Category = product.Category.ToString(),
+                        SellingType = product.SellingType.ToString(),
                         ProductImage = id, // getting name of image
                         ImageFileUrl = "https://jupetaprojects3.s3.amazonaws.com/product_images/" + imageId + ".png",
                         AddedAt = DateTime.UtcNow
@@ -268,11 +276,14 @@ namespace Jupeta.Services
         //get all products
         public async Task<PagedList<Products>> GetAllProducts(PageParameters param)
         {
-            var query = await _products.Find(p => true).SortByDescending(p => p.AddedAt).ToListAsync();
+            var query = await _products.Find(p => true)
+                         .SortByDescending(p => p.AddedAt)
+                         .Skip((param.PageNumber - 1) * param.PageSize)
+                         .Limit(param.PageSize).ToListAsync();
 
-            var pagedList = PagedList<Products>.ToPagedList(query.AsQueryable(), param.PageNumber, param.PageSize);
+            var pagedList = PagedList<Products>.ToPagedList(query, param.PageNumber, param.PageSize);
 
-            return await pagedList;
+            return pagedList;
         }
 
 
@@ -281,9 +292,9 @@ namespace Jupeta.Services
         {
             var query = await _products.Find(p => p.IsAvailable == true).SortByDescending(p => p.AddedAt).ToListAsync();
 
-            var pagedList = PagedList<Products>.ToPagedList(query.AsQueryable(), param.PageNumber, param.PageSize);
+            var pagedList = PagedList<Products>.ToPagedList(query, param.PageNumber, param.PageSize);
 
-            return await pagedList;
+            return pagedList;
         }
 
         //create a category
@@ -427,9 +438,9 @@ namespace Jupeta.Services
                         break;
                 }
 
-                var pagedList = PagedList<Products>.ToPagedList(products.AsQueryable(), param.PageNumber, param.PageSize);
+                var pagedList = PagedList<Products>.ToPagedList(products, param.PageNumber, param.PageSize);
 
-                return await pagedList;
+                return pagedList;
 
             }
             catch (Exception ex) { throw new Exception(ex.Message); }

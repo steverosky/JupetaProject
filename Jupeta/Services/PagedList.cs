@@ -1,8 +1,4 @@
-﻿using System;
-using System.Collections.Generic;
-using System.Linq;
-using System.Threading.Tasks;
-using Microsoft.EntityFrameworkCore;
+﻿using System.Collections;
 
 namespace Jupeta.Services
 {
@@ -44,10 +40,10 @@ namespace Jupeta.Services
         }
         //public bool HasNextPage => Page * PageSize < TotalCount;
 
-        public static async Task<PagedList<T>> ToPagedList(IQueryable<T> query, int pageNumber, int pageSize)
+        public static PagedList<T> ToPagedList(List<T> query, int pageNumber, int pageSize)
         {
-            var count = await  query.CountAsync();
-            var items = await query.Skip((pageNumber - 1) * pageSize).Take(pageSize).ToListAsync();
+            var count =  query.Count();
+            var items = query;
 
             return new PagedList<T>(items, count, pageNumber, pageSize);
         }

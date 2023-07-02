@@ -12,6 +12,8 @@ namespace Jupeta.Models.DBModels
         [BindNever]
         public string Id { get; set;} = string.Empty;
         [BsonElement("categoryName")]
-        public required string Name { get; set;}
+        public required int CategoryId { get; set;}
+        [BindNever]
+        public string Name { get; set; } = string.Empty;
     }
 }
