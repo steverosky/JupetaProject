@@ -44,4 +44,4 @@ namespace Jupeta.Models.DBModels
 
 }
 
-//make category required
+// TODO: make category required

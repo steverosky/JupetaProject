@@ -453,4 +453,13 @@ namespace Jupeta.Services
 //                    _ => throw new ArgumentException("Invalid sort parameter."),
 //                };
 
-//cascade delete and update on product changes in cart and product list
+
+
+// TODO: Put the user id in the token and use httpcontext to get the id for other processes
+// TODO: cascade delete and update on product changes in cart and product list
+// TODO: Chatgpt for product summary and listing
+// NOTE: using (var session = await client.StartSessionAsync())
+//      {     Begin transaction
+//    session.StartTransaction();
+// NOTE: await session.CommitTransactionAsync();
+// NOTE: await session.AbortTransactionAsync();
