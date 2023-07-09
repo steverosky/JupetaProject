@@ -3,7 +3,7 @@ using Jupeta.Models.RequestModels;
 using Jupeta.Models.ResponseModels;
 using Microsoft.IdentityModel.Tokens;
 using MongoDB.Driver;
-using Newtonsoft.Json;
+using System.Data;
 using System.IdentityModel.Tokens.Jwt;
 using System.Security.Claims;
 
@@ -191,22 +191,30 @@ namespace Jupeta.Services
                 throw new Exception("Email or Password is Incorrect");
             }
 
-            string token = CreateToken(user);
+            string token = CreateToken(dbUser.Email, dbUser.Id);
+
+            //set session
+            _httpContextAccessor?.HttpContext?.Session.SetString(SessionVariables.SessionKeySessionId.ToString(), Guid.NewGuid().ToString());
+            _httpContextAccessor?.HttpContext?.Session.SetString(SessionVariables.SessionKeyUsername.ToString(), dbUser.Email);
+
             return new TokenResponse
-            {
-                Id = dbUser.Id,
-                Email = user.Email,
-                Token = token
+            {               
+                Email = dbUser.Email,
+                FullName = dbUser.GetFullName(),
+                PhoneNumber = dbUser.PhoneNumber,
+                DateOfBirth = dbUser.DateOfBirth
+
             };
         }
 
 
         //Create Token for authentication
-        public string CreateToken(UserLogin user)
+        private string CreateToken(string email, string Id)
         {
             List<Claim> claims = new List<Claim>()
             {
-                new Claim(ClaimTypes.Email, user.Email)
+                new Claim(ClaimTypes.Email, email),
+                new Claim(ClaimTypes.NameIdentifier, Id)
             };
 
             var key = new SymmetricSecurityKey(Encoding.UTF8.GetBytes(
@@ -218,12 +226,28 @@ namespace Jupeta.Services
                  _config["JwtConfig:Issuer"],
                 _config["JwtConfig:Audience"],
                 claims: claims,
-                expires: DateTime.UtcNow.AddHours(5),
+                expires: DateTime.UtcNow.AddSeconds(5),
                 signingCredentials: cred
                 );
 
             var jwt = new JwtSecurityTokenHandler().WriteToken(token);
+
+            _httpContextAccessor?.HttpContext?.Response.Cookies.Append("token", jwt, new CookieOptions
+            {
+                HttpOnly = true,
+                Expires = DateTime.UtcNow.AddSeconds(15),
+                Secure = true,
+                IsEssential = true,
+                SameSite = SameSiteMode.None
+
+            }); 
             return jwt;
+        }
+
+        //Create A Session when user logs in
+        private void CreateSession()
+        {
+
         }
 
         //add new products
@@ -463,3 +487,4 @@ namespace Jupeta.Services
 //    session.StartTransaction();
 // NOTE: await session.CommitTransactionAsync();
 // NOTE: await session.AbortTransactionAsync();
+// TODO: API Rate limiting

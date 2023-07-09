@@ -1,5 +1,8 @@
-global using System.Text;
+global using Microsoft.AspNetCore.Authorization;
+global using Microsoft.AspNetCore.Mvc;
 global using Microsoft.EntityFrameworkCore;
+global using Newtonsoft.Json;
+global using System.Text;
 using Amazon.S3;
 using Jupeta.Models.DBModels;
 using Jupeta.Services;
@@ -37,6 +40,10 @@ builder.Services.AddAuthentication(options =>
     options.DefaultChallengeScheme = JwtBearerDefaults.AuthenticationScheme;
     options.DefaultScheme = JwtBearerDefaults.AuthenticationScheme;
 })
+.AddCookie(options =>
+    {
+        options.Cookie.Name = "token";
+    })
 .AddJwtBearer(jwt =>
 {
     var key = Encoding.UTF8.GetBytes(builder.Configuration["JwtConfig:Secret"]!);
@@ -52,6 +59,15 @@ builder.Services.AddAuthentication(options =>
         ValidIssuer = builder.Configuration["JwtConfig:Issuer"],
         ValidateLifetime = true,
 
+    };
+
+    jwt.Events = new JwtBearerEvents
+    {
+        OnMessageReceived = context =>
+        {
+            context.Token = context.Request.Cookies["token"];
+            return Task.CompletedTask;
+        }
     };
 
 });
@@ -83,7 +99,17 @@ builder.Services.AddSwaggerGen(options =>
     options.OperationFilter<SecurityRequirementsOperationFilter>();
 });
 
+builder.Services.AddDistributedMemoryCache();
+builder.Services.AddSession(options =>
+{
+    //options.Cookie.Name = "Jupeta.Session";
+    options.IdleTimeout = TimeSpan.FromSeconds(2);
+    //options.Cookie.HttpOnly = true;
+    //options.Cookie.IsEssential = true;
+});
+
 var app = builder.Build();
+
 
 app.UseStaticFiles(new StaticFileOptions
 {
@@ -99,12 +125,14 @@ if (app.Environment.IsDevelopment())
     app.UseSwaggerUI();
 }
 
-app.UseSerilogRequestLogging();
 app.UseHttpsRedirection();
+app.UseSerilogRequestLogging();
 app.UseCors("AllowAll");
 
 app.UseAuthorization();
 app.UseAuthentication();
+app.UseSession();
+
 
 
 app.MapControllers();

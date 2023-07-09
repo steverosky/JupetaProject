@@ -1,5 +1,5 @@
-﻿using MongoDB.Bson.Serialization.Attributes;
-using MongoDB.Bson;
+﻿using MongoDB.Bson;
+using MongoDB.Bson.Serialization.Attributes;
 
 namespace Jupeta.Models.DBModels
 {
@@ -17,7 +17,7 @@ namespace Jupeta.Models.DBModels
         [BsonElement("passwordHash")]
         public string PasswordHash { get; set; } = string.Empty;
         [BsonElement("phoneNumber")]
-        public long? PhoneNumber { get; set; }
+        public long PhoneNumber { get; set; }
         [BsonElement("dateOfBirth")]
         [BsonDateTimeOptions(Kind = DateTimeKind.Utc)]
         public DateTime DateOfBirth { get; set; }
@@ -28,5 +28,9 @@ namespace Jupeta.Models.DBModels
         [BsonElement("modifiedOn")]
         public DateTime ModifiedOn { get; set; }
 
+        public string GetFullName()
+        {
+            return $"{this.FirstName}, {this.LastName}";
+        }
     }
 }

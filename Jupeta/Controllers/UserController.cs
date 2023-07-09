@@ -3,14 +3,11 @@ using Jupeta.Models.DBModels;
 using Jupeta.Models.RequestModels;
 using Jupeta.Models.ResponseModels;
 using Jupeta.Services;
-using Microsoft.AspNetCore.Authorization;
-using Microsoft.AspNetCore.Mvc;
-using Newtonsoft.Json;
 
 
 namespace Jupeta.Controllers
 {
-    //[Authorize(AuthenticationSchemes = "Bearer")]
+    [Authorize(AuthenticationSchemes = "Bearer")]
     [Route("api/[controller]")]
     [ApiController]
     public class UserController : ControllerBase
@@ -32,6 +29,8 @@ namespace Jupeta.Controllers
         [Route("GetAllUsers")]
         public ActionResult<List<UserReg>> GetUsers()
         {
+            var test = HttpContext.Session.GetString(SessionVariables.SessionKeyUsername.ToString());
+            Console.WriteLine(test);
             ResponseType type = ResponseType.Success;
             _logger.LogInformation("Get all users method Starting.");
             try
