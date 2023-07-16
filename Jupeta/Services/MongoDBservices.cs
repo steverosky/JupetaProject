@@ -6,7 +6,7 @@ using MongoDB.Driver;
 using System.Data;
 using System.IdentityModel.Tokens.Jwt;
 using System.Security.Claims;
-
+using System.Security.Cryptography;
 
 namespace Jupeta.Services
 {
@@ -16,13 +16,15 @@ namespace Jupeta.Services
         private readonly IMongoCollection<Products> _products;
         private readonly IMongoCollection<Carts> _carts;
         private readonly IMongoCollection<Categories> _categories;
+        private readonly IMongoCollection<RefreshTokens> _refreshTokens;
         private readonly IConfiguration _config;
         private readonly IHttpContextAccessor _httpContextAccessor;
         private readonly IFileService _fileService;
         private readonly HttpClient _httpClient;
+        private readonly TokenValidationParameters _validationParameters;
 
         public MongoDBservices(IMongoDBSettings mongoSettings, IConfiguration config, IMongoClient mongoClient,
-            IHttpContextAccessor httpContextAccessor, IFileService fileService, HttpClient httpClient)
+            IHttpContextAccessor httpContextAccessor, IFileService fileService, HttpClient httpClient, TokenValidationParameters validationParameters)
         {
             //MongoClient client = new MongoClient(mongoSettings.ConnectionURI);
             var database = mongoClient.GetDatabase(mongoSettings.DatabaseName);
@@ -30,10 +32,12 @@ namespace Jupeta.Services
             _products = database.GetCollection<Products>("products");
             _carts = database.GetCollection<Carts>("carts");
             _categories = database.GetCollection<Categories>("categories");
+            _refreshTokens = database.GetCollection<RefreshTokens>("refreshTokens");
             _config = config;
             _httpContextAccessor = httpContextAccessor;
             _fileService = fileService;
             _httpClient = httpClient;
+            _validationParameters = validationParameters;
         }
 
 
@@ -178,43 +182,39 @@ namespace Jupeta.Services
         //Login 
         public async Task<object> Login(UserLogin user)
         {
-            var dbUser = await _users.Find(x => x.Email == user.Email).FirstOrDefaultAsync();
-
-            if (dbUser == null)
+            try
             {
-                throw new Exception("Email or Password is Incorrect");
+                var dbUser = await _users.Find(x => x.Email == user.Email).FirstOrDefaultAsync();
+
+                if (dbUser == null)
+                {
+                    throw new UnauthorizedAccessException("Email or Password is Incorrect");
+                }
+
+                bool isPasswordValid = BCrypt.Net.BCrypt.Verify(user.PasswordHash, dbUser.PasswordHash);
+                if (!isPasswordValid)
+                {
+                    throw new UnauthorizedAccessException("Email or Password is Incorrect");
+                }
+
+                return await CreateToken(dbUser.Email, dbUser.Id);
+            }
+            catch (Exception ex)
+            {
+                throw new Exception(ex.Message);
             }
 
-            bool isPasswordValid = BCrypt.Net.BCrypt.Verify(user.PasswordHash, dbUser.PasswordHash);
-            if (!isPasswordValid)
-            {
-                throw new Exception("Email or Password is Incorrect");
-            }
-
-            string token = CreateToken(dbUser.Email, dbUser.Id);
-
-            //set session
-            _httpContextAccessor?.HttpContext?.Session.SetString(SessionVariables.SessionKeySessionId.ToString(), Guid.NewGuid().ToString());
-            _httpContextAccessor?.HttpContext?.Session.SetString(SessionVariables.SessionKeyUsername.ToString(), dbUser.Email);
-
-            return new TokenResponse
-            {               
-                Email = dbUser.Email,
-                FullName = dbUser.GetFullName(),
-                PhoneNumber = dbUser.PhoneNumber,
-                DateOfBirth = dbUser.DateOfBirth
-
-            };
         }
 
 
         //Create Token for authentication
-        private string CreateToken(string email, string Id)
+        private async Task<TokenResponse> CreateToken(string email, string Id)
         {
             List<Claim> claims = new List<Claim>()
             {
                 new Claim(ClaimTypes.Email, email),
-                new Claim(ClaimTypes.NameIdentifier, Id)
+                new Claim(ClaimTypes.Name, Id),
+                new Claim(JwtRegisteredClaimNames.Jti, Guid.NewGuid().ToString()),
             };
 
             var key = new SymmetricSecurityKey(Encoding.UTF8.GetBytes(
@@ -226,27 +226,92 @@ namespace Jupeta.Services
                  _config["JwtConfig:Issuer"],
                 _config["JwtConfig:Audience"],
                 claims: claims,
-                expires: DateTime.UtcNow.AddSeconds(5),
+                expires: DateTime.UtcNow.AddSeconds(double.Parse(_config.GetSection("JwtConfig:Expires").Value!)),
                 signingCredentials: cred
                 );
 
             var jwt = new JwtSecurityTokenHandler().WriteToken(token);
 
-            _httpContextAccessor?.HttpContext?.Response.Cookies.Append("token", jwt, new CookieOptions
+            RefreshTokens refreshToken = new()
+            {
+                Id = Guid.NewGuid().ToString(),
+                UserId = Id,
+                RToken = Convert.ToBase64String(RandomNumberGenerator.GetBytes(64)),
+                JwtId = token.Id,
+                IsRevoked = false,
+                IsUsed = true,
+                CreatedOn = DateTime.UtcNow,
+                ExpiresOn = DateTime.UtcNow.AddDays(7)
+            };
+
+            await _refreshTokens.InsertOneAsync(refreshToken);
+
+            _httpContextAccessor?.HttpContext?.Response.Cookies.Append("AccessToken", jwt, new CookieOptions
             {
                 HttpOnly = true,
-                Expires = DateTime.UtcNow.AddSeconds(15),
+                Expires = DateTime.UtcNow.AddSeconds(10),
                 Secure = true,
                 IsEssential = true,
                 SameSite = SameSiteMode.None
 
-            }); 
-            return jwt;
+            });
+
+            _httpContextAccessor?.HttpContext?.Response.Cookies.Append("RefreshToken", refreshToken.RToken, new CookieOptions
+            {
+                HttpOnly = true,
+                Expires = refreshToken.ExpiresOn,
+                Secure = true,
+                IsEssential = true,
+                SameSite = SameSiteMode.None
+
+            });
+
+            var dbUser = await _users.Find(x => x.Id == Id).FirstOrDefaultAsync();
+            return new TokenResponse
+            {
+                Email = dbUser.Email,
+                FullName = dbUser.GetFullName(),
+                PhoneNumber = dbUser.PhoneNumber,
+                DateOfBirth = dbUser.DateOfBirth
+            };
         }
 
-        //Create A Session when user logs in
-        private void CreateSession()
+        //verify and generate refresh tokens
+        public async Task<object> Refresh()
         {
+            try
+            {
+                var accessToken = _httpContextAccessor?.HttpContext?.Request.Cookies["AccessToken"];
+                var refreshToken = _httpContextAccessor?.HttpContext?.Request.Cookies["RefreshToken"];
+
+
+                var jwtTokenHandler = new JwtSecurityTokenHandler();
+
+                var tokenInVerification = jwtTokenHandler.ValidateToken(accessToken, _validationParameters, out var validatedToken);
+
+                JwtSecurityToken? jwtSecurityToken = validatedToken as JwtSecurityToken;
+                if (validatedToken == null || (jwtSecurityToken != null && !jwtSecurityToken.Header.Alg.Equals(SecurityAlgorithms.HmacSha256, StringComparison.InvariantCultureIgnoreCase)))
+                {
+                    throw new SecurityTokenException("Invalid token");
+                }
+
+                var Id = tokenInVerification?.Identity?.Name; //this is mapped to the Name claim by default
+                var user = await _users.Find(u => u.Id == Id).FirstOrDefaultAsync();
+                var savedToken = await _refreshTokens.Find(u => u.UserId == Id).FirstOrDefaultAsync();
+                var jti = tokenInVerification?.Claims?.FirstOrDefault(e => e.Type == JwtRegisteredClaimNames.Jti)?.Value;
+
+                if (user is null || savedToken.RToken != refreshToken || savedToken.ExpiresOn <= DateTime.UtcNow || savedToken.IsUsed
+                    || savedToken.IsRevoked || savedToken.JwtId != jti)
+                { throw new SecurityTokenException("Invalid Request"); }
+
+
+                return await CreateToken(user.Email, user.Id);
+
+            }
+            catch (Exception ex)
+            {
+                throw new SecurityTokenException(ex.Message);
+            }
 
         }
 
@@ -488,3 +553,4 @@ namespace Jupeta.Services
 // NOTE: await session.CommitTransactionAsync();
 // NOTE: await session.AbortTransactionAsync();
 // TODO: API Rate limiting
+// TODO: Revoke refresh tokens

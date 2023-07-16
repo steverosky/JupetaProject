@@ -58,6 +58,7 @@ builder.Services.AddAuthentication(options =>
         ValidAudience = builder.Configuration["JwtConfig:Audience"],
         ValidIssuer = builder.Configuration["JwtConfig:Issuer"],
         ValidateLifetime = true,
+        ClockSkew = TimeSpan.Zero
 
     };
 
@@ -102,10 +103,10 @@ builder.Services.AddSwaggerGen(options =>
 builder.Services.AddDistributedMemoryCache();
 builder.Services.AddSession(options =>
 {
-    //options.Cookie.Name = "Jupeta.Session";
-    options.IdleTimeout = TimeSpan.FromSeconds(2);
-    //options.Cookie.HttpOnly = true;
-    //options.Cookie.IsEssential = true;
+    options.Cookie.Name = "Jupeta.Session";
+    options.IdleTimeout = TimeSpan.FromSeconds(60);
+    options.Cookie.HttpOnly = true;
+    options.Cookie.IsEssential = true;
 });
 
 var app = builder.Build();
