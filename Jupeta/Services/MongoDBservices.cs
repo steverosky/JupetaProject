@@ -543,7 +543,6 @@ namespace Jupeta.Services
 //                };
 
 
-
 // TODO: Put the user id in the token and use httpcontext to get the id for other processes
 // TODO: cascade delete and update on product changes in cart and product list
 // TODO: Chatgpt for product summary and listing
