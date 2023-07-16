@@ -1,5 +1,4 @@
-﻿using Amazon.S3.Model;
-using Jupeta.Models.DBModels;
+﻿using Jupeta.Models.DBModels;
 using Jupeta.Models.RequestModels;
 using Jupeta.Models.ResponseModels;
 using Jupeta.Services;
@@ -7,7 +6,7 @@ using Jupeta.Services;
 
 namespace Jupeta.Controllers
 {
-    [Authorize(AuthenticationSchemes = "Bearer")]
+    //[Authorize(AuthenticationSchemes = "Bearer")]
     [Route("api/[controller]")]
     [ApiController]
     public class UserController : ControllerBase
@@ -19,7 +18,7 @@ namespace Jupeta.Controllers
         public UserController(IConfiguration config, IMongoDBservices db, ILogger<UserController> logger)
         {
             _configuration = config;
-            _db = db;
+            _db = db ?? throw new ArgumentNullException(nameof(db)); 
             _logger = logger;
             _logger.LogInformation("User controller called ");
         }
@@ -29,8 +28,11 @@ namespace Jupeta.Controllers
         [Route("GetAllUsers")]
         public ActionResult<List<UserReg>> GetUsers()
         {
-            var test = HttpContext.Session.GetString(SessionVariables.SessionKeyUsername.ToString());
-            Console.WriteLine(test);
+            if (!HttpContext.Session.IsAvailable)
+            {
+                return BadRequest("Login to continue");
+            }
+
             ResponseType type = ResponseType.Success;
             _logger.LogInformation("Get all users method Starting.");
             try
@@ -50,6 +52,7 @@ namespace Jupeta.Controllers
                 return BadRequest(ResponseHandler.GetExceptionResponse(ex));
             }
         }
+
 
 
 
@@ -154,6 +157,31 @@ namespace Jupeta.Controllers
             }
         }
 
+        [AllowAnonymous]
+        [HttpPost]
+        [Route("TokenRefresh")]
+        public async Task<IActionResult> RefreshToken()
+        {
+            _logger.LogInformation("Refresh token method Starting.");
+            if (!ModelState.IsValid)
+            {
+                return BadRequest(ModelState);
+            }
+            try
+            {
+                ResponseType type = ResponseType.Success;
+                var model = await _db.Refresh();
+
+                return Ok(ResponseHandler.GetAppResponse(type, model));
+            }
+
+            catch (Exception ex)
+            {
+                _logger.LogError(ex.Message);
+                return BadRequest(ResponseHandler.GetExceptionResponse(ex));
+            }
+        }
+
 
         //[Authorize(AuthenticationSchemes = "Bearer")]
         [HttpGet]
@@ -164,7 +192,7 @@ namespace Jupeta.Controllers
             ResponseType type = ResponseType.Success;
             try
             {
-                 var data = await _db.GetAllProducts(param);
+                var data = await _db.GetAllProducts(param);
 
                 if (data == null)
                 {
@@ -202,7 +230,7 @@ namespace Jupeta.Controllers
             ResponseType type = ResponseType.Success;
             try
             {
-               var data = await _db.GetAvailableProducts(param);
+                var data = await _db.GetAvailableProducts(param);
 
                 if (!data.Any())
                 {
@@ -373,7 +401,7 @@ namespace Jupeta.Controllers
 
         [HttpGet]
         [Route("SearchSort")]
-        public async Task<ActionResult<List<Products>>> SearchSort(string? sortBy, string? keyword, bool isDescending, [FromQuery]PageParameters param)
+        public async Task<ActionResult<List<Products>>> SearchSort(string? sortBy, string? keyword, bool isDescending, [FromQuery] PageParameters param)
         {
             _logger.LogInformation("Search products method Starting.");
             ResponseType type = ResponseType.Success;
@@ -407,5 +435,17 @@ namespace Jupeta.Controllers
                 return BadRequest(ResponseHandler.GetExceptionResponse(ex));
             }
         }
+
+        //[HttpPost, Authorize]
+        //[Route("revoke")]
+        //public IActionResult Revoke()
+        //{
+        //    var username = User.Identity.Name;
+        //    var user = _userContext.LoginModels.SingleOrDefault(u => u.UserName == username);
+        //    if (user == null) return BadRequest();
+        //    user.RefreshToken = null;
+        //    _userContext.SaveChanges();
+        //    return NoContent();
+        //}
     }
 }

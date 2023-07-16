@@ -10,6 +10,7 @@ namespace Jupeta.Services
         public Task AddUser(AddUserModel user);
         public Task EditUser(EditUserModel user);
         public Task<object> Login(UserLogin user);
+        public Task<object> Refresh();
         public Task AddProduct(AddProductModel product);
         public Task<Products> GetProductById(string id);
         public Task<PagedList<Products>> GetAllProducts(PageParameters param);
