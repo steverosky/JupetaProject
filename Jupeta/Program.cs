@@ -33,6 +33,21 @@ builder.Services.AddCors(options =>
 
 builder.Services.AddHttpClient();
 
+var key = Encoding.UTF8.GetBytes(builder.Configuration["JwtConfig:Secret"]!);
+
+var tokenValidationParameters = new TokenValidationParameters
+{
+    ValidateIssuerSigningKey = true,
+    IssuerSigningKey = new SymmetricSecurityKey(key),
+    ValidateIssuer = true,
+    ValidateAudience = true,
+    ValidAudience = builder.Configuration["JwtConfig:Audience"],
+    ValidIssuer = builder.Configuration["JwtConfig:Issuer"],
+    ValidateLifetime = true,
+    ClockSkew = TimeSpan.Zero
+
+};
+
 //add jwt authentication services to program
 builder.Services.AddAuthentication(options =>
 {
@@ -42,31 +57,20 @@ builder.Services.AddAuthentication(options =>
 })
 .AddCookie(options =>
     {
-        options.Cookie.Name = "token";
+        options.Cookie.Name = "AccessToken";
     })
 .AddJwtBearer(jwt =>
 {
-    var key = Encoding.UTF8.GetBytes(builder.Configuration["JwtConfig:Secret"]!);
+
     jwt.SaveToken = true;
     jwt.RequireHttpsMetadata = false;
-    jwt.TokenValidationParameters = new TokenValidationParameters
-    {
-        ValidateIssuerSigningKey = true,
-        IssuerSigningKey = new SymmetricSecurityKey(key),
-        ValidateIssuer = true,
-        ValidateAudience = true,
-        ValidAudience = builder.Configuration["JwtConfig:Audience"],
-        ValidIssuer = builder.Configuration["JwtConfig:Issuer"],
-        ValidateLifetime = true,
-        ClockSkew = TimeSpan.Zero
-
-    };
+    jwt.TokenValidationParameters = tokenValidationParameters;
 
     jwt.Events = new JwtBearerEvents
     {
         OnMessageReceived = context =>
         {
-            context.Token = context.Request.Cookies["token"];
+            context.Token = context.Request.Cookies["AccessToken"];
             return Task.CompletedTask;
         }
     };
@@ -74,6 +78,7 @@ builder.Services.AddAuthentication(options =>
 });
 
 // Add services to the container.
+builder.Services.AddSingleton(tokenValidationParameters);
 builder.Services.AddScoped<IMongoDBservices, MongoDBservices>();
 builder.Services.AddTransient<IFileService, FileService>();
 builder.Services.AddSingleton<IAmazonS3, AmazonS3Client>();

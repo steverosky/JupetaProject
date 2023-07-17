@@ -24,7 +24,8 @@ namespace Jupeta.Services
         private readonly TokenValidationParameters _validationParameters;
 
         public MongoDBservices(IMongoDBSettings mongoSettings, IConfiguration config, IMongoClient mongoClient,
-            IHttpContextAccessor httpContextAccessor, IFileService fileService, HttpClient httpClient, TokenValidationParameters validationParameters)
+            IHttpContextAccessor httpContextAccessor, IFileService fileService, HttpClient httpClient,
+            TokenValidationParameters validationParameters)
         {
             //MongoClient client = new MongoClient(mongoSettings.ConnectionURI);
             var database = mongoClient.GetDatabase(mongoSettings.DatabaseName);
@@ -249,7 +250,7 @@ namespace Jupeta.Services
             _httpContextAccessor?.HttpContext?.Response.Cookies.Append("AccessToken", jwt, new CookieOptions
             {
                 HttpOnly = true,
-                Expires = DateTime.UtcNow.AddSeconds(10),
+                Expires = DateTime.UtcNow.AddSeconds(30),
                 Secure = true,
                 IsEssential = true,
                 SameSite = SameSiteMode.None
@@ -281,29 +282,46 @@ namespace Jupeta.Services
         {
             try
             {
+                // Retrieve the access token and refresh token from the request cookies
                 var accessToken = _httpContextAccessor?.HttpContext?.Request.Cookies["AccessToken"];
                 var refreshToken = _httpContextAccessor?.HttpContext?.Request.Cookies["RefreshToken"];
 
-
+                // Create a JwtSecurityTokenHandler to validate the access token
                 var jwtTokenHandler = new JwtSecurityTokenHandler();
 
+                // Validate the access token using the specified validation parameters
                 var tokenInVerification = jwtTokenHandler.ValidateToken(accessToken, _validationParameters, out var validatedToken);
 
+                // Cast the validated token as JwtSecurityToken for further processing
                 JwtSecurityToken? jwtSecurityToken = validatedToken as JwtSecurityToken;
-                if (validatedToken == null || (jwtSecurityToken != null && !jwtSecurityToken.Header.Alg.Equals(SecurityAlgorithms.HmacSha256, StringComparison.InvariantCultureIgnoreCase)))
+
+                // Check if the token is invalid or the algorithm used is not HmacSha512
+                if (validatedToken == null || (jwtSecurityToken != null && !jwtSecurityToken.Header.Alg.Equals(SecurityAlgorithms.HmacSha512, StringComparison.InvariantCultureIgnoreCase)))
                 {
                     throw new SecurityTokenException("Invalid token");
                 }
 
-                var Id = tokenInVerification?.Identity?.Name; //this is mapped to the Name claim by default
+                // Extract the user ID from the validated token
+                var Id = tokenInVerification?.Identity?.Name; // This is mapped to the Name claim by default
+
+                // Retrieve the user from the database based on the extracted ID
                 var user = await _users.Find(u => u.Id == Id).FirstOrDefaultAsync();
-                var savedToken = await _refreshTokens.Find(u => u.UserId == Id).FirstOrDefaultAsync();
+
+                // Retrieve the saved refresh token from the database for the user
+                var savedToken = await _refreshTokens.Find(u => u.UserId == Id).SortByDescending(u => u.CreatedOn).FirstOrDefaultAsync();
+
+                // Extract the JwtId (jti) claim from the validated token
                 var jti = tokenInVerification?.Claims?.FirstOrDefault(e => e.Type == JwtRegisteredClaimNames.Jti)?.Value;
 
-                if (user is null || savedToken.RToken != refreshToken || savedToken.ExpiresOn <= DateTime.UtcNow || savedToken.IsUsed
+                // Check if the user is null, refresh token is invalid, expired, used, revoked, or the JwtId does not match
+                if (user is null || savedToken.RToken != refreshToken || savedToken.ExpiresOn <= DateTime.UtcNow
                     || savedToken.IsRevoked || savedToken.JwtId != jti)
-                { throw new SecurityTokenException("Invalid Request"); }
+                {
+                    throw new SecurityTokenException("Invalid Request");
+                }
 
+                // Delete the old token from the database
+                await _refreshTokens.DeleteOneAsync(u => u.UserId == Id);
 
                 return await CreateToken(user.Email, user.Id);
 
