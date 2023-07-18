@@ -8,7 +8,10 @@
   </head>
   <body>
     <div class="container">
-      <h1>Login</h1>
+      <div class="head-label">
+        <label>Sign in</label>
+        <button class="btns">Register</button>
+      </div>
       <form id="loginForm" action="#">
         <div class="form-control">
           <label for="email">Email</label>
@@ -16,13 +19,39 @@
         </div>
         <div class="form-control">
           <label for="password">Password</label>
-          <input type="password" id="password" placeholder="Enter Password" required />
+          <input
+            type="password"
+            id="password"
+            placeholder="Enter Password"
+            required />
         </div>
-        <button type="submit" class="btn">Sign in</button>
       </form>
+
+      <div class="forget-stay">
+        <div class="stay">
+          <input type="checkbox" name="" id="stay" />
+          <label for="stay">Stay signed in</label>
+        </div>
+        <div>
+          <a href="">Forget your password?</a>
+        </div>
+      </div>
+      <button type="submit" class="btn">Sign in</button>
+      <a class="trob" href="">Trouble signing in?</a><br><br>
+
+      <div class="hr">
+        <p>OR</p>
+      </div><br>
       <button type="submit" class="btns">Sign in with Google</button>
       <button type="submit" class="btns">Sign in with Facebook</button>
       <button type="submit" class="btns">Sign in with Apple</button>
+      <p class="terms">
+        By clicking the submit button below, I hereby agree to and accept the
+        following <a href="">terms and conditions</a> governing my use of the
+        Jupeta™ website. I further reaffirm my acceptance of the general
+        <a href="">Privacy Policy</a>
+        governing my use of any Jupeta™ website.
+      </p>
     </div>
     <script src="script.js"></script>
   </body>
