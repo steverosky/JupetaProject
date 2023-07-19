@@ -1,3 +1,7 @@
+global using Microsoft.AspNetCore.Authorization;
+global using Microsoft.AspNetCore.Mvc;
+global using Microsoft.EntityFrameworkCore;
+global using Newtonsoft.Json;
 global using System.Text;
 using Amazon.S3;
 using Jupeta.Models.DBModels;
@@ -29,6 +33,21 @@ builder.Services.AddCors(options =>
 
 builder.Services.AddHttpClient();
 
+var key = Encoding.UTF8.GetBytes(builder.Configuration["JwtConfig:Secret"]!);
+
+var tokenValidationParameters = new TokenValidationParameters
+{
+    ValidateIssuerSigningKey = true,
+    IssuerSigningKey = new SymmetricSecurityKey(key),
+    ValidateIssuer = true,
+    ValidateAudience = true,
+    ValidAudience = builder.Configuration["JwtConfig:Audience"],
+    ValidIssuer = builder.Configuration["JwtConfig:Issuer"],
+    ValidateLifetime = true,
+    ClockSkew = TimeSpan.Zero
+
+};
+
 //add jwt authentication services to program
 builder.Services.AddAuthentication(options =>
 {
@@ -36,26 +55,30 @@ builder.Services.AddAuthentication(options =>
     options.DefaultChallengeScheme = JwtBearerDefaults.AuthenticationScheme;
     options.DefaultScheme = JwtBearerDefaults.AuthenticationScheme;
 })
+.AddCookie(options =>
+    {
+        options.Cookie.Name = "AccessToken";
+    })
 .AddJwtBearer(jwt =>
 {
-    var key = Encoding.UTF8.GetBytes(builder.Configuration["JwtConfig:Secret"]!);
+
     jwt.SaveToken = true;
     jwt.RequireHttpsMetadata = false;
-    jwt.TokenValidationParameters = new TokenValidationParameters
-    {
-        ValidateIssuerSigningKey = true,
-        IssuerSigningKey = new SymmetricSecurityKey(key),
-        ValidateIssuer = true,
-        ValidateAudience = true,
-        ValidAudience = builder.Configuration["JwtConfig:Audience"],
-        ValidIssuer = builder.Configuration["JwtConfig:Issuer"],
-        ValidateLifetime = true,
+    jwt.TokenValidationParameters = tokenValidationParameters;
 
+    jwt.Events = new JwtBearerEvents
+    {
+        OnMessageReceived = context =>
+        {
+            context.Token = context.Request.Cookies["AccessToken"];
+            return Task.CompletedTask;
+        }
     };
 
 });
 
 // Add services to the container.
+builder.Services.AddSingleton(tokenValidationParameters);
 builder.Services.AddScoped<IMongoDBservices, MongoDBservices>();
 builder.Services.AddTransient<IFileService, FileService>();
 builder.Services.AddSingleton<IAmazonS3, AmazonS3Client>();
@@ -82,7 +105,17 @@ builder.Services.AddSwaggerGen(options =>
     options.OperationFilter<SecurityRequirementsOperationFilter>();
 });
 
+builder.Services.AddDistributedMemoryCache();
+builder.Services.AddSession(options =>
+{
+    options.Cookie.Name = "Jupeta.Session";
+    options.IdleTimeout = TimeSpan.FromSeconds(60);
+    options.Cookie.HttpOnly = true;
+    options.Cookie.IsEssential = true;
+});
+
 var app = builder.Build();
+
 
 app.UseStaticFiles(new StaticFileOptions
 {
@@ -98,12 +131,14 @@ if (app.Environment.IsDevelopment())
     app.UseSwaggerUI();
 }
 
-app.UseSerilogRequestLogging();
 app.UseHttpsRedirection();
+app.UseSerilogRequestLogging();
 app.UseCors("AllowAll");
 
 app.UseAuthorization();
 app.UseAuthentication();
+app.UseSession();
+
 
 
 app.MapControllers();

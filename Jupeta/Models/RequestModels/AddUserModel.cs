@@ -12,7 +12,7 @@ namespace Jupeta.Models.RequestModels
         public required string Email { get; set; }
         [PasswordPropertyText]
         public required string Password { get; set; }
-        public required long? PhoneNumber { get; set; }
+        public required long PhoneNumber { get; set; }
         public required DateTime DateOfBirth { get; set; }
     }
 }
