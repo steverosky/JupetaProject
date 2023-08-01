@@ -571,3 +571,4 @@ namespace Jupeta.Services
 // NOTE: await session.AbortTransactionAsync();
 // TODO: API Rate limiting
 // TODO: Revoke refresh tokens
+// TODO: login notify to user to see if he logged in OR save user machine details for subsequent logins 
