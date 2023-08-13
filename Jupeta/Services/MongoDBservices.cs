@@ -21,11 +21,12 @@ namespace Jupeta.Services
         private readonly IHttpContextAccessor _httpContextAccessor;
         private readonly IFileService _fileService;
         private readonly HttpClient _httpClient;
+        private readonly IEmailService _email;
         private readonly TokenValidationParameters _validationParameters;
 
         public MongoDBservices(IMongoDBSettings mongoSettings, IConfiguration config, IMongoClient mongoClient,
-            IHttpContextAccessor httpContextAccessor, IFileService fileService, HttpClient httpClient,
-            TokenValidationParameters validationParameters)
+            IHttpContextAccessor httpContextAccessor, IFileService fileService, HttpClient httpClient, 
+            TokenValidationParameters validationParameters, IEmailService email)
         {
             //MongoClient client = new MongoClient(mongoSettings.ConnectionURI);
             var database = mongoClient.GetDatabase(mongoSettings.DatabaseName);
@@ -39,6 +40,7 @@ namespace Jupeta.Services
             _fileService = fileService;
             _httpClient = httpClient;
             _validationParameters = validationParameters;
+            _email = email;
         }
 
 
@@ -250,8 +252,8 @@ namespace Jupeta.Services
             _httpContextAccessor?.HttpContext?.Response.Cookies.Append("AccessToken", jwt, new CookieOptions
             {
                 HttpOnly = true,
-                Expires = DateTime.UtcNow.AddSeconds(30),
-                Secure = true,
+                //Expires = DateTime.UtcNow.AddSeconds(30),
+                Secure = false,
                 IsEssential = true,
                 SameSite = SameSiteMode.None
 
@@ -261,7 +263,7 @@ namespace Jupeta.Services
             {
                 HttpOnly = true,
                 Expires = refreshToken.ExpiresOn,
-                Secure = true,
+                Secure = false,
                 IsEssential = true,
                 SameSite = SameSiteMode.None
 

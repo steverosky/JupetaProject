@@ -27,13 +27,44 @@ builder.Services.AddSingleton<IMongoClient>(s
 
 //add CORS policy
 builder.Services.AddCors(options =>
-    options.AddPolicy("AllowAll", p => p.AllowAnyOrigin()
-    .AllowAnyMethod()
-    .AllowAnyHeader()));
+{
+    //options.AddPolicy("AllowAll", p =>
+    //{
+    //    p.AllowAnyOrigin() // Allow requests from any origin
+    //     .AllowAnyMethod()
+    //     .AllowAnyHeader();
+    //     .AllowCredentials(); // Allow cross-origin requests with credentials (if needed)
+    //});
+
+    options.AddPolicy("AllowJupeta", p =>
+    {
+        p.WithOrigins("https://jupeta.vercel.app", "http://127.0.0.1:3000", "http://127.0.0.1:5500") // Allow requests only from specific origin
+         .AllowAnyMethod()
+         .AllowAnyHeader()
+         .AllowCredentials(); // Allow cross-origin requests with credentials (if needed)
+    });
+});
+
+
+
 
 builder.Services.AddHttpClient();
 
 var key = Encoding.UTF8.GetBytes(builder.Configuration["JwtConfig:Secret"]!);
+
+//var RefreshTokenValidationParameter = new TokenValidationParameters
+//{
+//    ValidateIssuerSigningKey = true,
+//    IssuerSigningKey = new SymmetricSecurityKey(key),
+//    ValidateIssuer = true,
+//    ValidateAudience = true,
+//    ValidAudience = builder.Configuration["JwtConfig:Audience"],
+//    ValidIssuer = builder.Configuration["JwtConfig:Issuer"],
+//    ValidateLifetime = true,
+//    RequireExpirationTime = false,
+//    ClockSkew = TimeSpan.Zero
+
+//};
 
 var tokenValidationParameters = new TokenValidationParameters
 {
@@ -44,6 +75,7 @@ var tokenValidationParameters = new TokenValidationParameters
     ValidAudience = builder.Configuration["JwtConfig:Audience"],
     ValidIssuer = builder.Configuration["JwtConfig:Issuer"],
     ValidateLifetime = true,
+    RequireExpirationTime= true,
     ClockSkew = TimeSpan.Zero
 
 };
@@ -79,9 +111,11 @@ builder.Services.AddAuthentication(options =>
 
 // Add services to the container.
 builder.Services.AddSingleton(tokenValidationParameters);
+//builder.Services.AddSingleton(RefreshTokenValidationParameter);
 builder.Services.AddScoped<IMongoDBservices, MongoDBservices>();
 builder.Services.AddTransient<IFileService, FileService>();
 builder.Services.AddSingleton<IAmazonS3, AmazonS3Client>();
+builder.Services.AddScoped<IEmailService, EmailService>();
 
 builder.Services.AddDefaultAWSOptions(builder.Configuration.GetAWSOptions());
 
@@ -114,6 +148,13 @@ builder.Services.AddSession(options =>
     options.Cookie.IsEssential = true;
 });
 
+//add email service
+var emailConfig = builder.Configuration
+        .GetSection("EmailConfiguration")
+        .Get<EmailConfiguration>();
+builder.Services.AddSingleton(emailConfig);
+
+
 var app = builder.Build();
 
 
@@ -133,7 +174,7 @@ if (app.Environment.IsDevelopment())
 
 app.UseHttpsRedirection();
 app.UseSerilogRequestLogging();
-app.UseCors("AllowAll");
+app.UseCors("AllowJupeta");
 
 app.UseAuthorization();
 app.UseAuthentication();

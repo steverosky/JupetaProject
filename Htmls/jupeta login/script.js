@@ -1,30 +1,38 @@
-const form = document.getElementById("loginForm");
+document.addEventListener("DOMContentLoaded", function () {
+  // Get a reference to the sign-in button by its ID
+  const signInButton = document.getElementById("signInButton");
 
-form.addEventListener("submit", function(event) {
-    event.preventDefault(); //prevent the form from submitting normally
-    
+  // Add a click event listener to the button
+  signInButton.addEventListener("click", function () {
+    //prevent the form from submitting normally
+
     let email = document.getElementById("email").value;
     let password = document.getElementById("password").value;
-    
+
     //send a POST request to your API endpoint
-    fetch('https://localhost:7172/api/User/Login', {
-      method: 'POST',
+
+    const url =
+      "https://ec2-44-197-193-3.compute-1.amazonaws.com/api/User/Login";
+
+    const data = {
+      email: email,
+      passwordHash: password,
+    };
+
+    fetch(url, {
+      method: "POST",
       headers: {
-        'Content-Type': 'application/json',
-        'accept': '*/*' 
+        "Content-Type": "application/json",
       },
-      body: JSON.stringify({ 
-        email: email,
-        passwordHash: password
-      })
+      body: JSON.stringify(data),
     })
-    .then(response => {
+      .then((response) => {
         if (!response.ok) {
           throw new Error("Error: " + response.status);
         }
         return response.json();
       })
-      .then(data => {
+      .then((data) => {
         //if authentication is successful, redirect to a protected page
         window.location.href = "home.html";
 
@@ -33,12 +41,12 @@ form.addEventListener("submit", function(event) {
         //save the token to local storage
         localStorage.setItem("token", data.Token);
         localStorage.setItem("userEmail", data.Email);
-
-    })
-      .catch(error => {
+      })
+      .catch((error) => {
         console.error("Error:", error);
         //display error message to user
         const errorElement = document.getElementById("error-message");
         errorElement.textContent = "Invalid email or password";
       });
   });
+});
