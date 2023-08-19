@@ -8,6 +8,7 @@ namespace Jupeta.Models.RequestModels
 {
     public class AddProductModel
     {
+        [MaxLength(100), MinLength(6)]
         public required string ProductName { get; set; }
         public required string Description { get; set; }
         public required string Summary { get; set; }

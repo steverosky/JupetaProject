@@ -11,3 +11,4 @@ namespace Jupeta.Models.RequestModels
         public string PasswordHash { get; set; } = string.Empty;
     }
 }
+
