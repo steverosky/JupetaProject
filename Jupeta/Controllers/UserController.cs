@@ -23,7 +23,7 @@ namespace Jupeta.Controllers
             _logger.LogInformation("User controller called ");
         }
 
-        //[Authorize]
+        [Authorize]
         [HttpGet]
         [Route("GetAllUsers")]
         public ActionResult<List<UserReg>> GetUsers()

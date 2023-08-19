@@ -253,9 +253,10 @@ namespace Jupeta.Services
             {
                 HttpOnly = true,
                 //Expires = DateTime.UtcNow.AddSeconds(30),
-                Secure = false,
+                //Secure = true,
                 IsEssential = true,
-                SameSite = SameSiteMode.None
+                Path ="/",
+                SameSite = SameSiteMode.Unspecified
 
             });
 
@@ -263,9 +264,10 @@ namespace Jupeta.Services
             {
                 HttpOnly = true,
                 Expires = refreshToken.ExpiresOn,
-                Secure = false,
+                //Secure = true,
                 IsEssential = true,
-                SameSite = SameSiteMode.None
+                Path = "/",
+                SameSite = SameSiteMode.Unspecified
 
             });
 

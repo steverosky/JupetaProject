@@ -1,7 +1,6 @@
 ﻿using MongoDB.Bson.Serialization.Attributes;
 using MongoDB.Bson;
 using System.ComponentModel.DataAnnotations.Schema;
-using MediatR.NotificationPublishers;
 
 namespace Jupeta.Models.DBModels
 {
