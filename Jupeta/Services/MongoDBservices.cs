@@ -417,7 +417,7 @@ namespace Jupeta.Services
         }
 
 
-        //add to cart
+        //add to cart function
         public async Task AddToCart(string id, string userId)
         {
             var product = await _products.Find(p => p.Id == id).FirstOrDefaultAsync();
