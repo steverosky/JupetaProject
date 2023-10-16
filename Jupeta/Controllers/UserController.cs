@@ -2,7 +2,7 @@
 using Jupeta.Models.RequestModels;
 using Jupeta.Models.ResponseModels;
 using Jupeta.Services;
-
+using Newtonsoft.Json;
 
 namespace Jupeta.Controllers
 {
@@ -14,16 +14,18 @@ namespace Jupeta.Controllers
         private readonly IConfiguration _configuration;
         private readonly IMongoDBservices _db;
         private readonly ILogger<UserController> _logger;
+        private readonly ICacheService _cachedb;
 
-        public UserController(IConfiguration config, IMongoDBservices db, ILogger<UserController> logger)
+        public UserController(IConfiguration config, IMongoDBservices db, ILogger<UserController> logger, ICacheService cachedb)
         {
             _configuration = config;
-            _db = db ?? throw new ArgumentNullException(nameof(db)); 
+            _db = db ?? throw new ArgumentNullException(nameof(db));
             _logger = logger;
             _logger.LogInformation("User controller called ");
+            _cachedb = cachedb;
         }
 
-        [Authorize]
+        // [Authorize]
         [HttpGet]
         [Route("GetAllUsers")]
         public ActionResult<List<UserReg>> GetUsers()
@@ -435,6 +437,54 @@ namespace Jupeta.Controllers
                 return BadRequest(ResponseHandler.GetExceptionResponse(ex));
             }
         }
+
+
+
+        [HttpPost]
+        [Route("GenerateOTPWithEmail")]
+        public async Task<ActionResult> GenerateOTPWithEmail(string email)
+        {
+            _logger.LogInformation("Generate otp method Starting.");
+            ResponseType type = ResponseType.Success;
+            try
+            {
+                await _db.GenerateOTPWithEmail(email);
+                _logger.LogWarning("Otp generated successfully");
+                return Ok(ResponseHandler.GetAppResponse(type, "Operation Completed Successfully"));
+
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError(ex.Message);
+                return BadRequest(ResponseHandler.GetExceptionResponse(ex));
+            }
+        }
+
+
+        [HttpPost]
+        [Route("ValidateOTP")]
+        public async Task<ActionResult> ValidateOTP(string otp, string email)
+        {
+            _logger.LogInformation("Validate otp method Starting.");
+            ResponseType type = ResponseType.Success;
+            try
+            {
+                var data = await _db.ValidateUserOTP(otp, email);
+                if (data==false)
+                {
+                    type = ResponseType.Failure;
+                }
+                return Ok(ResponseHandler.GetAppResponse(type, data));
+
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError(ex.Message);
+                return BadRequest(ResponseHandler.GetExceptionResponse(ex));
+            }
+        }
+
+
 
         //[HttpPost, Authorize]
         //[Route("revoke")]
