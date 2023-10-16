@@ -3,6 +3,7 @@ using Jupeta.Models.RequestModels;
 using Jupeta.Models.ResponseModels;
 using Microsoft.IdentityModel.Tokens;
 using MongoDB.Driver;
+using Newtonsoft.Json;
 using System.Data;
 using System.IdentityModel.Tokens.Jwt;
 using System.Security.Claims;
@@ -22,11 +23,12 @@ namespace Jupeta.Services
         private readonly IFileService _fileService;
         private readonly HttpClient _httpClient;
         private readonly IEmailService _email;
+        private readonly ICacheService _cachedb;
         private readonly TokenValidationParameters _validationParameters;
 
         public MongoDBservices(IMongoDBSettings mongoSettings, IConfiguration config, IMongoClient mongoClient,
-            IHttpContextAccessor httpContextAccessor, IFileService fileService, HttpClient httpClient, 
-            TokenValidationParameters validationParameters, IEmailService email)
+            IHttpContextAccessor httpContextAccessor, IFileService fileService, HttpClient httpClient,
+            TokenValidationParameters validationParameters, IEmailService email, ICacheService cachedb)
         {
             //MongoClient client = new MongoClient(mongoSettings.ConnectionURI);
             var database = mongoClient.GetDatabase(mongoSettings.DatabaseName);
@@ -41,6 +43,8 @@ namespace Jupeta.Services
             _httpClient = httpClient;
             _validationParameters = validationParameters;
             _email = email;
+            _cachedb = cachedb;
+
         }
 
 
@@ -118,10 +122,10 @@ namespace Jupeta.Services
             var passwordHash = CreatePasswordhash(user.Password);
 
             // Validate phone number
-            if (!await IsPhoneValid(user.PhoneNumber))
-            {
-                throw new Exception("Invalid Phone Number");
-            }
+            //if (!await IsPhoneValid(user.PhoneNumber))
+            //{
+            //    throw new Exception("Invalid Phone Number");
+            //}
 
             UserReg dbTable = new()
             {
@@ -255,7 +259,7 @@ namespace Jupeta.Services
                 //Expires = DateTime.UtcNow.AddSeconds(30),
                 //Secure = true,
                 IsEssential = true,
-                Path ="/",
+                Path = "/",
                 SameSite = SameSiteMode.Unspecified
 
             });
@@ -553,8 +557,82 @@ namespace Jupeta.Services
             }
             catch (Exception ex) { throw new Exception(ex.Message); }
         }
+
+
+        //Generate OTP with email for verification
+        public async Task GenerateOTPWithEmail(string email)
+        {
+            //check if email exists
+            var IsEmail = await _users.Find(p => p.Email == email).FirstOrDefaultAsync();
+            if (IsEmail is not null)
+            {
+                throw new Exception("User Already Exists");
+            }
+
+            try
+            {
+                //create a random 4-digits number
+                Random randomdigits = new Random();
+                var otp = randomdigits.Next(1000, 9999).ToString();
+
+                //store in redis cache
+                var expireTime = DateTimeOffset.UtcNow.AddSeconds(300);
+                var storeInRedis = _cachedb.SetData<string>(email, otp, expireTime);
+
+                //send OTP to email
+                var body = string.Format("Enter the OTP below to verify your email. \nOTP will expire in {0} seconds. \nOTP: {1}", expireTime.Second, otp);
+                if (storeInRedis)
+                {
+                    _email.sendMail("Verify Your Email", body, email);
+                }
+                else { throw new Exception("Something went wrong"); }
+            }
+            catch (Exception ex)
+            {
+                throw new Exception(ex.Message);
+            }
+
+        }
+
+
+        //Validate OTP from user
+        public async Task<bool> ValidateUserOTP(string userOTP, string email)
+        {
+            //check if email exists
+            var IsEmail = await _users.Find(p => p.Email == email).FirstOrDefaultAsync();
+            if (IsEmail is not null)
+            {
+                throw new Exception("User Already Exists");
+            }
+
+            //retrieve otp from cache
+            var cacheOTP = _cachedb.GetData<string>(email);
+            if (cacheOTP == null) 
+            {
+                throw new Exception("Something went wrong. Retry the OTP generation");
+            }
+
+            //compare user and cache otp
+            bool otpIsvalid = int.Parse(cacheOTP) == int.Parse(userOTP);
+            if (otpIsvalid)
+            {
+                return true;
+            }
+            return false;
+
+        }
     }
 }
+
+
+
+
+
+
+
+
+
+
 //another way to do SWITCH expression
 //     SortDefinition<Products> sortDefinition = sortBy switch
 //                {
@@ -576,3 +654,5 @@ namespace Jupeta.Services
 // TODO: API Rate limiting
 // TODO: Revoke refresh tokens
 // TODO: login notify to user to see if he logged in OR save user machine details for subsequent logins 
+
+// TODO: generate and verify the email with OTP

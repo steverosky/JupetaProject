@@ -1,3 +1,4 @@
+using Jupeta.Controllers;
 using System.Net;
 using System.Net.Mail;
 using System.Net.Mime;
@@ -18,9 +19,13 @@ namespace Jupeta.Services
     public class EmailService : IEmailService
     {
         private readonly EmailConfiguration _emailConfig;
-        public EmailService(EmailConfiguration emailConfig)
+        private readonly ILogger<EmailService> _logger;
+
+        public EmailService(EmailConfiguration emailConfig, ILogger<EmailService> logger)
         {
             _emailConfig = emailConfig;
+            _logger = logger;
+            _logger.LogInformation("Email Service called ");
         }
 
 
@@ -58,21 +63,22 @@ namespace Jupeta.Services
                     try
                     {
                         AlternateView htmlView = AlternateView.CreateAlternateViewFromString(body, null, "text/html");
-                        AlternateView imagelink = new AlternateView("cyberteqLogo.png", MediaTypeNames.Image.Jpeg)
-                        { //var imageView =new AlternateView("cyberteqLogo.png", MediaTypeNames.Image.Jpeg);
+                        //AlternateView imagelink = new AlternateView("cyberteqLogo.png", MediaTypeNames.Image.Jpeg)
+                        //{ //var imageView =new AlternateView("cyberteqLogo.png", MediaTypeNames.Image.Jpeg);
 
-                            ContentId = "image1",
-                            TransferEncoding = TransferEncoding.Base64
-                        };
+                        //    ContentId = "image1",
+                        //    TransferEncoding = TransferEncoding.Base64
+                        //};
 
                         message.AlternateViews.Add(htmlView);
-                        message.AlternateViews.Add(imagelink);
+                        //message.AlternateViews.Add(imagelink);
 
                         smtp.Send(message);
+                        _logger.LogInformation("Email sent successfully");
                     }
                     catch (SmtpFailedRecipientsException ex)
                     {
-                        //_logger.LogError(ex.FailedRecipient, this);
+                        _logger.LogError(ex.FailedRecipient, this);
                         for (int i = 0; i < ex.InnerExceptions.Length; i++)
                         {
                             SmtpStatusCode status = ex.InnerExceptions[i].StatusCode;
@@ -89,17 +95,17 @@ namespace Jupeta.Services
                             }
                             else
                             {
-                                //_logger.LogError("Failed to deliver message to {0}",
-                                //ex.InnerExceptions[i].FailedRecipient);
+                                _logger.LogError("Failed to deliver message to {0}",
+                                ex.InnerExceptions[i].FailedRecipient);
                             }
                         }
                     }
 
                 }
             }
-            catch (Exception)
+            catch (Exception ex)
             {
-                //_logger.LogError(ex.Message, this);
+                _logger.LogError(ex.Message, this);
             }
 
         }
