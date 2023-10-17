@@ -20,5 +20,8 @@ namespace Jupeta.Services
         public Task DeleteItem(string id, string userId);
         public Task CreateCategory(Categories model);
         public Task<PagedList<Products>> SearchSortBy(string? sortBy, string? keyword, bool isDescending, PageParameters param);
+        public Task GenerateOTPWithEmail(string email);
+        public Task<bool> ValidateUserOTP(string userOTP, string email);
+
     }
 }

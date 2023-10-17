@@ -1,8 +1,8 @@
 global using Microsoft.AspNetCore.Authorization;
 global using Microsoft.AspNetCore.Mvc;
 global using Microsoft.EntityFrameworkCore;
-global using Newtonsoft.Json;
 global using System.Text;
+using Newtonsoft.Json;
 using Amazon.S3;
 using Jupeta.Models.DBModels;
 using Jupeta.Services;
@@ -116,6 +116,8 @@ builder.Services.AddScoped<IMongoDBservices, MongoDBservices>();
 builder.Services.AddTransient<IFileService, FileService>();
 builder.Services.AddSingleton<IAmazonS3, AmazonS3Client>();
 builder.Services.AddScoped<IEmailService, EmailService>();
+builder.Services.AddScoped<ICacheService, CacheService>();
+
 
 builder.Services.AddDefaultAWSOptions(builder.Configuration.GetAWSOptions());
 

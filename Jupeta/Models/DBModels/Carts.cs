@@ -10,16 +10,7 @@ namespace Jupeta.Models.DBModels
         public string Id { get; set; } = string.Empty;
         [BsonElement("userId")]
         public required string UserId { get; set; }
-        //[BsonElement("productId")]
-        //public required string ProductId { get; set; }
-        //[BsonElement("productName")]
-        //public required string ProductName { get; set; }
-        //[BsonElement("price")]
-        //public required double Price { get; set; }
-        //[BsonElement("quantity")]
-        //public required int Quantity { get; set; }
-        //[BsonElement("productImage")]
-        //public required Guid ProductImage { get; set; }
+        
         [BsonElement("cartItems")]
         public List<Products>? Products { get; set; }
         [BsonElement("dateAdded")]
