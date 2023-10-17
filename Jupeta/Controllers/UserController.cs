@@ -439,8 +439,8 @@ namespace Jupeta.Controllers
         }
 
 
-
-        [HttpPost]
+        [AllowAnonymous]
+        [HttpGet]
         [Route("GenerateOTPWithEmail")]
         public async Task<ActionResult> GenerateOTPWithEmail(string email)
         {
@@ -460,8 +460,8 @@ namespace Jupeta.Controllers
             }
         }
 
-
-        [HttpPost]
+        [AllowAnonymous]
+        [HttpGet]
         [Route("ValidateOTP")]
         public async Task<ActionResult> ValidateOTP(string otp, string email)
         {
