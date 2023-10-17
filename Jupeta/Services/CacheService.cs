@@ -6,10 +6,14 @@ namespace Jupeta.Services
     public class CacheService : ICacheService
     {
         IDatabase _cachedb;
-        public CacheService()
+        IConfiguration _config;
+        public CacheService(IConfiguration config)
         {
-            var redis = ConnectionMultiplexer.Connect("localhost:6379,abortConnect=false");
+            _config = config;
+            var redisConn = _config.GetValue<string>("redis");
+            var redis = ConnectionMultiplexer.Connect(redisConn);
             _cachedb = redis.GetDatabase();
+            
         }
 
         public T GetData<T>(string key)
