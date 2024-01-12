@@ -109,6 +109,13 @@ builder.Services.AddAuthentication(options =>
 
 });
 
+builder.Services.AddAuthentication()
+                .AddGoogle(options =>
+                {
+                    options.ClientId = builder.Configuration["ClientId"]!;
+                    options.ClientSecret = builder.Configuration["ClientSecret"]!;
+                });
+
 // Add services to the container.
 builder.Services.AddSingleton(tokenValidationParameters);
 //builder.Services.AddSingleton(RefreshTokenValidationParameter);

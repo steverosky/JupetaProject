@@ -30,7 +30,7 @@ namespace Jupeta.Services
                 {
                     ["x-amz-meta-originalname"] = ImageFile.FileName,
                     ["x-amz-meta-extension"] = Path.GetExtension(ImageFile.FileName)
-                }
+                } 
             };
             return await _s3.PutObjectAsync(putObjectRequest);
         }
