@@ -20,12 +20,14 @@ namespace Jupeta.Services
     {
         private readonly EmailConfiguration _emailConfig;
         private readonly ILogger<EmailService> _logger;
+        private readonly IConfiguration _config;
 
-        public EmailService(EmailConfiguration emailConfig, ILogger<EmailService> logger)
+        public EmailService(EmailConfiguration emailConfig, ILogger<EmailService> logger, IConfiguration config)
         {
             _emailConfig = emailConfig;
             _logger = logger;
             _logger.LogInformation("Email Service called ");
+            _config = config;
         }
 
 
@@ -42,15 +44,16 @@ namespace Jupeta.Services
                 string body = msg;
                 var smtp = new SmtpClient
                 {
-                    Host = "smtp.gmail.com",
-                    Port = 587,
-                    EnableSsl = true,
+                    Host = _config.GetValue<string>("mailcatcher"),
+                    Port = 1025,
+                    EnableSsl = false,
                     DeliveryMethod = SmtpDeliveryMethod.Network,
                     UseDefaultCredentials = false,
                     Credentials = new NetworkCredential(fromAddress.Address, fromPassword),
                     Timeout = 50000
 
                 };
+                //_logger.LogInformation($"Sending mail to: {smtp.Host}");
                 using (var message = new MailMessage(fromAddress, toAddress)
                 {
                     Subject = subject,

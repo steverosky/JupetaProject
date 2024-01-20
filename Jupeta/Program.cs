@@ -14,6 +14,8 @@ using Microsoft.OpenApi.Models;
 using MongoDB.Driver;
 using Serilog;
 using Swashbuckle.AspNetCore.Filters;
+using Microsoft.AspNetCore.Authentication.Google;
+using Microsoft.AspNetCore.Authentication.Cookies;
 
 var builder = WebApplication.CreateBuilder(args);
 
@@ -83,9 +85,9 @@ var tokenValidationParameters = new TokenValidationParameters
 //add jwt authentication services to program
 builder.Services.AddAuthentication(options =>
 {
-    options.DefaultAuthenticateScheme = JwtBearerDefaults.AuthenticationScheme;
-    options.DefaultChallengeScheme = JwtBearerDefaults.AuthenticationScheme;
-    options.DefaultScheme = JwtBearerDefaults.AuthenticationScheme;
+    options.DefaultAuthenticateScheme = CookieAuthenticationDefaults.AuthenticationScheme;
+    options.DefaultChallengeScheme = CookieAuthenticationDefaults.AuthenticationScheme;
+    options.DefaultSignInScheme = CookieAuthenticationDefaults.AuthenticationScheme;
 })
 .AddCookie(options =>
     {
@@ -107,7 +109,13 @@ builder.Services.AddAuthentication(options =>
         }
     };
 
+})
+.AddGoogle(options =>
+{
+    options.ClientId = builder.Configuration["ClientId"]!;
+    options.ClientSecret = builder.Configuration["ClientSecret"]!;
 });
+
 
 // Add services to the container.
 builder.Services.AddSingleton(tokenValidationParameters);
