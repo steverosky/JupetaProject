@@ -191,7 +191,7 @@ namespace Jupeta.Services
         {
             try
             {
-                var dbUser = await _users.Find(x => x.Email == user.Email).FirstOrDefaultAsync();
+                var dbUser = await _users.Findzz(x => x.Email == user.Email).FirstOrDefaultAsync();
 
                 if (dbUser == null)
                 {
