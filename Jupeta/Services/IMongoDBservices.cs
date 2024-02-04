@@ -22,6 +22,9 @@ namespace Jupeta.Services
         public Task<PagedList<Products>> SearchSortBy(string? sortBy, string? keyword, bool isDescending, PageParameters param);
         public Task GenerateOTPWithEmail(string email);
         public Task<bool> ValidateUserOTP(string userOTP, string email);
+        public Task<bool> UserExists(string email);
+
+        public Task AddUserExternal(string name, string email);
 
     }
 }

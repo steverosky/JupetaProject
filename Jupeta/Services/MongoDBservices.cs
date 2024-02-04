@@ -1,6 +1,7 @@
 ﻿using Jupeta.Models.DBModels;
 using Jupeta.Models.RequestModels;
 using Jupeta.Models.ResponseModels;
+using Microsoft.AspNetCore.Identity;
 using Microsoft.IdentityModel.Tokens;
 using MongoDB.Driver;
 using Newtonsoft.Json;
@@ -110,12 +111,33 @@ namespace Jupeta.Services
         //Get User by email
         public UserReg GetUser(string email) => _users.Find<UserReg>(user => user.Email == email).FirstOrDefault();
 
-        //Add new User
-        public async Task AddUser(AddUserModel user)
+        public async Task<bool> UserExists(string email)
+        {
+                var exists = await _users.Find(p => p.Email == email).AnyAsync();
+                return exists;
+
+        }
+
+
+        public async Task AddUserExternal(string name, string email)
+        {
+            UserReg dbTable = new()
+            {
+                FirstName = name,
+                Email = email,
+                CreatedOn = DateTime.UtcNow
+            };
+            await _users.InsertOneAsync(dbTable);
+        }
+
+
+
+            //Add new User
+            public async Task AddUser(AddUserModel user)
         {
             //check if email exists
-            var IsEmail = await _users.Find(p => p.Email == user.Email).FirstOrDefaultAsync();
-            if (IsEmail is not null)
+            var IsEmail = await UserExists(user.Email);
+            if (IsEmail)
             {
                 throw new Exception("User Already Exists");
             }
@@ -191,7 +213,7 @@ namespace Jupeta.Services
         {
             try
             {
-                var dbUser = await _users.Findzz(x => x.Email == user.Email).FirstOrDefaultAsync();
+                var dbUser = await _users.Find(x => x.Email == user.Email).FirstOrDefaultAsync();
 
                 if (dbUser == null)
                 {
