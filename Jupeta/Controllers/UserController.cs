@@ -2,15 +2,22 @@
 using Jupeta.Models.RequestModels;
 using Jupeta.Models.ResponseModels;
 using Jupeta.Services;
+using Microsoft.AspNetCore.Authentication;
 using Microsoft.AspNetCore.Authentication.Cookies;
 using Microsoft.AspNetCore.Authentication.Google;
-using Microsoft.AspNetCore.Authentication;
+using Microsoft.AspNetCore.Identity;
+using MongoDB.Driver;
 using Newtonsoft.Json;
 using System.Security.Claims;
+using System.IO;
+using Microsoft.AspNetCore.Mvc;
+using Microsoft.AspNetCore.Authentication.JwtBearer;
+
 
 namespace Jupeta.Controllers
 {
-    //[Authorize(AuthenticationSchemes = "Bearer")]
+    //[HostAuthentication]
+    [Authorize(AuthenticationSchemes = JwtBearerDefaults.AuthenticationScheme)]
     [Route("api/[controller]")]
     [ApiController]
     public class UserController : ControllerBase
@@ -474,7 +481,7 @@ namespace Jupeta.Controllers
             try
             {
                 var data = await _db.ValidateUserOTP(otp, email);
-                if (data==false)
+                if (data == false)
                 {
                     type = ResponseType.Failure;
                 }
@@ -489,28 +496,41 @@ namespace Jupeta.Controllers
         }
 
 
-        
-            [HttpGet("login")]
-            public IActionResult Login()
+        [AllowAnonymous]
+        [HttpGet("login")]
+        public IActionResult Login()
+        {
+            var props = new AuthenticationProperties { RedirectUri = "api/User/signin-google" };
+            return Challenge(props, GoogleDefaults.AuthenticationScheme);
+        }
+
+        [AllowAnonymous]
+        [HttpGet("signin-google")]
+        public async Task<IActionResult> GoogleLogin()
+        {
+            var response = await HttpContext.AuthenticateAsync(CookieAuthenticationDefaults.AuthenticationScheme);
+            if (response.Principal == null) return BadRequest();
+
+            var name = response.Principal.FindFirstValue(ClaimTypes.Name);
+            var givenName = response.Principal.FindFirstValue(ClaimTypes.GivenName);
+            var email = response.Principal.FindFirstValue(ClaimTypes.Email);
+
+            // Get the physical path to the index.html file
+            var filePath = Path.Combine(Directory.GetCurrentDirectory(), "index.html");
+
+            //Register user with the claims if not onboarded
+            var IsEmail = await _db.UserExists(email!);
+            if (!IsEmail)
             {
-                var props = new AuthenticationProperties { RedirectUri = "api/User/signin-google" };
-                return Challenge(props, GoogleDefaults.AuthenticationScheme);
+                await _db.AddUserExternal(name!, email!);
+
+                return PhysicalFile(filePath, "text/html");
+
             }
 
-            [HttpGet("signin-google")]
-            public async Task<IActionResult> GoogleLogin()
-            {
-                var response = await HttpContext.AuthenticateAsync(CookieAuthenticationDefaults.AuthenticationScheme);
-                if (response.Principal == null) return BadRequest();
-
-                var name = response.Principal.FindFirstValue(ClaimTypes.Name);
-                var givenName = response.Principal.FindFirstValue(ClaimTypes.GivenName);
-                var email = response.Principal.FindFirstValue(ClaimTypes.Email);
-            //Do something with the claims
-            var user = await (new { name, givenName, email});
-
-            return Ok();
-            }
+            // Return the file with a specified content type
+            return PhysicalFile(filePath, "text/html");
+        }
 
 
         //[HttpPost, Authorize]
