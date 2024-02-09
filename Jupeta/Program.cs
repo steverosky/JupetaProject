@@ -114,8 +114,12 @@ builder.Services.AddAuthentication(options =>
 {
     options.ClientId = builder.Configuration["ClientId"]!;
     options.ClientSecret = builder.Configuration["ClientSecret"]!;
+})
+.AddFacebook(options =>
+{
+    options.AppId = "1061437315134355";
+    options.AppSecret = "d63cd458408298c5f69187bd65d35ca2";
 });
-
 
 // Add services to the container.
 builder.Services.AddSingleton(tokenValidationParameters);
