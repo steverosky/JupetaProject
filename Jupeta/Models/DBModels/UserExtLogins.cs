@@ -1,10 +1,20 @@
-﻿namespace Jupeta.Models.DBModels
+﻿using MongoDB.Bson.Serialization.Attributes;
+using MongoDB.Bson;
+
+namespace Jupeta.Models.DBModels
 {
     public class UserExtLogins
     {
-        public string UserId { get; set; }
-        public string ProviderKey { get; set; }
-        public string Provider { get; set; }
-        public string Email { get; set; }
+        [BsonElement("userId")]
+        public string UserId { get; set; } = string.Empty;
+        [BsonElement("providerKey")]
+        public required string ProviderKey { get; set; }
+        [BsonElement("provider")]
+        public required string Provider { get; set; }
+        [BsonElement("email")]
+        public required string Email { get; set; }
+        [BsonDateTimeOptions(Kind = DateTimeKind.Utc)]
+        public required DateTime DateAdded { get; set; }
+
     }
 }

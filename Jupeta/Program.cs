@@ -112,13 +112,13 @@ builder.Services.AddAuthentication(options =>
 })
 .AddGoogle(options =>
 {
-    options.ClientId = builder.Configuration["ClientId"]!;
-    options.ClientSecret = builder.Configuration["ClientSecret"]!;
+    options.ClientId = builder.Configuration["GoogleSigninConfig:ClientId"]!;
+    options.ClientSecret = builder.Configuration["GoogleSigninConfig:ClientSecret"]!;
 })
 .AddFacebook(options =>
 {
-    options.AppId = "1061437315134355";
-    options.AppSecret = "d63cd458408298c5f69187bd65d35ca2";
+    options.AppId = builder.Configuration["FacebookSigninConfig:AppId"]!;
+    options.AppSecret = builder.Configuration["FacebookSigninConfig:AppSecret"]!;
 });
 
 // Add services to the container.

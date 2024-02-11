@@ -11,6 +11,7 @@ namespace Jupeta.Services
         public Task AddUser(AddUserModel user);
         public Task EditUser(EditUserModel user);
         public Task<object> Login(UserLogin user);
+        public Task AddToExtLogin(string provider, string providerKey, string email, string userId);
         public Task<TokenResponse> CreateToken(string email, string Id);
         public Task<object> Refresh();
         public Task AddProduct(AddProductModel product);

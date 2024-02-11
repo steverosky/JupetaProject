@@ -13,6 +13,7 @@ using System.IO;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.AspNetCore.Authentication.JwtBearer;
 using Microsoft.AspNetCore.Authentication.Facebook;
+using System.Linq.Expressions;
 
 
 namespace Jupeta.Controllers
@@ -498,7 +499,7 @@ namespace Jupeta.Controllers
 
 
         [AllowAnonymous]
-        [HttpGet("login")]
+        [HttpGet("ExternalLogin")]
         public IActionResult Login()
         {
             var props = new AuthenticationProperties { RedirectUri = "api/User/signin-google" };
@@ -509,35 +510,46 @@ namespace Jupeta.Controllers
         [HttpGet("signin-google")]
         public async Task<IActionResult> GoogleLogin()
         {
-            var response = await HttpContext.AuthenticateAsync(CookieAuthenticationDefaults.AuthenticationScheme);
-            if (response.Principal == null) return BadRequest();
-
-            var name = response.Principal.FindFirstValue(ClaimTypes.Name);
-            var givenName = response.Principal.FindFirstValue(ClaimTypes.GivenName);
-            var surName = response.Principal.FindFirstValue(ClaimTypes.Surname);
-            var email = response.Principal.FindFirstValue(ClaimTypes.Email);
-            var ID = response.Principal.FindFirstValue(ClaimTypes.NameIdentifier);
-            var provider = response.Principal?.Identity?.AuthenticationType;
-
-            // Get the physical path to the index.html file
-            var filePath = Path.Combine(Directory.GetCurrentDirectory(), "index.html");
-
-            //Register user with the claims if not onboarded
-            var IsEmail = await _db.UserExists(email!);
-            if (!IsEmail)
+            try
             {
-                var userId = await _db.AddUserExternal(name!, email!);
+                var response = await HttpContext.AuthenticateAsync(CookieAuthenticationDefaults.AuthenticationScheme);
+                if (response.Principal == null) return BadRequest();
 
-                await _db.CreateToken(email!, userId);
+                var name = response.Principal.FindFirstValue(ClaimTypes.Name);
+                var givenName = response.Principal.FindFirstValue(ClaimTypes.GivenName);
+                var surName = response.Principal.FindFirstValue(ClaimTypes.Surname);
+                var email = response.Principal.FindFirstValue(ClaimTypes.Email);
+                var ID = response.Principal.FindFirstValue(ClaimTypes.NameIdentifier);
+                var provider = response.Principal?.Identity?.AuthenticationType;
+
+                // Get the physical path to the index.html file
+                var filePath = Path.Combine(Directory.GetCurrentDirectory(), "index.html");
+
+                //Register user with the claims if not onboarded
+                var IsEmail = await _db.UserExists(email!);
+                if (!IsEmail)
+                {
+                    var userId = await _db.AddUserExternal(name!, email!);
+                    await _db.AddToExtLogin(provider!, ID!, email!, userId!);
+
+                    await _db.CreateToken(email!, userId);
+                    return PhysicalFile(filePath, "text/html");
+
+                }
+
+                var user = _db.GetUser(email!);
+                await _db.CreateToken(email!, user.Id);
+
+                // Return the file with a specified content type
                 return PhysicalFile(filePath, "text/html");
-
             }
 
-            //var Id =  GetUserById(email!);
-            //await _db.CreateToken(email, Id);
-
-            // Return the file with a specified content type
-            return PhysicalFile(filePath, "text/html");
+            catch (Exception ex)
+            {
+                _logger.LogError(ex.Message);
+                return BadRequest(ResponseHandler.GetExceptionResponse(ex));
+            }
+            
         }
 
         [AllowAnonymous]
