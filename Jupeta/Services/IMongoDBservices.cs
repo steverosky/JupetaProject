@@ -1,5 +1,6 @@
 ﻿using Jupeta.Models.DBModels;
 using Jupeta.Models.RequestModels;
+using Jupeta.Models.ResponseModels;
 
 namespace Jupeta.Services
 {
@@ -10,6 +11,7 @@ namespace Jupeta.Services
         public Task AddUser(AddUserModel user);
         public Task EditUser(EditUserModel user);
         public Task<object> Login(UserLogin user);
+        public Task<TokenResponse> CreateToken(string email, string Id);
         public Task<object> Refresh();
         public Task AddProduct(AddProductModel product);
         public Task<Products> GetProductById(string id);
@@ -24,7 +26,7 @@ namespace Jupeta.Services
         public Task<bool> ValidateUserOTP(string userOTP, string email);
         public Task<bool> UserExists(string email);
 
-        public Task AddUserExternal(string name, string email);
+        public Task<string> AddUserExternal(string name, string email);
 
     }
 }

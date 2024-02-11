@@ -119,7 +119,7 @@ namespace Jupeta.Services
         }
 
 
-        public async Task AddUserExternal(string name, string email)
+        public async Task<string> AddUserExternal(string name, string email)
         {
             UserReg dbTable = new()
             {
@@ -128,6 +128,11 @@ namespace Jupeta.Services
                 CreatedOn = DateTime.UtcNow
             };
             await _users.InsertOneAsync(dbTable);
+
+            // Access the generated user ID
+            string userId = dbTable.Id.ToString(); // Assuming Id is the property for the user ID
+
+            return userId;
         }
 
 
@@ -237,7 +242,7 @@ namespace Jupeta.Services
 
 
         //Create Token for authentication
-        private async Task<TokenResponse> CreateToken(string email, string Id)
+        public async Task<TokenResponse> CreateToken(string email, string Id)
         {
             List<Claim> claims = new List<Claim>()
             {
