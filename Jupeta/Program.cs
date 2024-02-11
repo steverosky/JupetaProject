@@ -85,9 +85,9 @@ var tokenValidationParameters = new TokenValidationParameters
 //add jwt authentication services to program
 builder.Services.AddAuthentication(options =>
 {
-    //options.DefaultAuthenticateScheme = CookieAuthenticationDefaults.AuthenticationScheme;
-    //options.DefaultChallengeScheme = CookieAuthenticationDefaults.AuthenticationScheme;
-    //options.DefaultSignInScheme = CookieAuthenticationDefaults.AuthenticationScheme;
+    options.DefaultAuthenticateScheme = CookieAuthenticationDefaults.AuthenticationScheme;
+    options.DefaultChallengeScheme = CookieAuthenticationDefaults.AuthenticationScheme;
+    options.DefaultSignInScheme = CookieAuthenticationDefaults.AuthenticationScheme;
 })
 .AddCookie(options =>
     {
@@ -100,25 +100,25 @@ builder.Services.AddAuthentication(options =>
     jwt.RequireHttpsMetadata = false;
     jwt.TokenValidationParameters = tokenValidationParameters;
 
-    //jwt.Events = new JwtBearerEvents
-    //{
-    //    OnMessageReceived = context =>
-    //    {
-    //        context.Token = context.Request.Cookies["AccessToken"];
-    //        return Task.CompletedTask;
-    //    }
-    //};
+    jwt.Events = new JwtBearerEvents
+    {
+        OnMessageReceived = context =>
+        {
+            context.Token = context.Request.Cookies["AccessToken"];
+            return Task.CompletedTask;
+        }
+    };
 
 })
 .AddGoogle(options =>
 {
-    options.ClientId = builder.Configuration["ClientId"]!;
-    options.ClientSecret = builder.Configuration["ClientSecret"]!;
+    options.ClientId = builder.Configuration["GoogleSigninConfig:ClientId"]!;
+    options.ClientSecret = builder.Configuration["GoogleSigninConfig:ClientSecret"]!;
 })
 .AddFacebook(options =>
 {
-    options.AppId = "1061437315134355";
-    options.AppSecret = "d63cd458408298c5f69187bd65d35ca2";
+    options.AppId = builder.Configuration["FacebookSigninConfig:AppId"]!;
+    options.AppSecret = builder.Configuration["FacebookSigninConfig:AppSecret"]!;
 });
 
 // Add services to the container.

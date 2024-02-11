@@ -15,6 +15,7 @@ namespace Jupeta.Services
     public class MongoDBservices : IMongoDBservices
     {
         private readonly IMongoCollection<UserReg> _users;
+        private readonly IMongoCollection<UserExtLogins> _extUsers;
         private readonly IMongoCollection<Products> _products;
         private readonly IMongoCollection<Carts> _carts;
         private readonly IMongoCollection<Categories> _categories;
@@ -34,6 +35,7 @@ namespace Jupeta.Services
             //MongoClient client = new MongoClient(mongoSettings.ConnectionURI);
             var database = mongoClient.GetDatabase(mongoSettings.DatabaseName);
             _users = database.GetCollection<UserReg>("users");
+            _extUsers = database.GetCollection<UserExtLogins>("externalUserLogins");
             _products = database.GetCollection<Products>("products");
             _carts = database.GetCollection<Carts>("carts");
             _categories = database.GetCollection<Categories>("categories");
@@ -119,7 +121,8 @@ namespace Jupeta.Services
         }
 
 
-        public async Task AddUserExternal(string name, string email)
+        //add user with External Provider
+        public async Task<string> AddUserExternal(string name, string email)
         {
             UserReg dbTable = new()
             {
@@ -128,12 +131,38 @@ namespace Jupeta.Services
                 CreatedOn = DateTime.UtcNow
             };
             await _users.InsertOneAsync(dbTable);
+
+            // Access the generated user ID
+            string userId = dbTable.Id.ToString(); // Assuming Id is the property for the user ID
+
+            return userId;
+        }
+
+        //add External Provider user login
+        public async Task AddToExtLogin(string provider, string providerKey, string email, string userId)
+        {            
+            var extEmailExists = await _extUsers.Find(p => p.Email == email).AnyAsync();
+            if (extEmailExists)
+            {
+                throw new Exception("User Already Exists");
+            }
+
+            UserExtLogins dbTable = new()
+            {
+                UserId = userId,
+                Provider = provider,
+                ProviderKey = providerKey,
+                Email = email,
+                DateAdded = DateTime.UtcNow
+            };
+
+            await _extUsers.InsertOneAsync(dbTable);
+
         }
 
 
-
-            //Add new User
-            public async Task AddUser(AddUserModel user)
+        //Add new User
+        public async Task AddUser(AddUserModel user)
         {
             //check if email exists
             var IsEmail = await UserExists(user.Email);
@@ -237,12 +266,12 @@ namespace Jupeta.Services
 
 
         //Create Token for authentication
-        private async Task<TokenResponse> CreateToken(string email, string Id)
+        public async Task<TokenResponse> CreateToken(string email, string Id)
         {
             List<Claim> claims = new List<Claim>()
             {
                 new Claim(ClaimTypes.Email, email),
-                new Claim(ClaimTypes.Name, Id),
+                new Claim(ClaimTypes.NameIdentifier, Id),
                 new Claim(JwtRegisteredClaimNames.Jti, Guid.NewGuid().ToString()),
             };
 
