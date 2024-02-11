@@ -4,16 +4,11 @@ using Jupeta.Models.ResponseModels;
 using Jupeta.Services;
 using Microsoft.AspNetCore.Authentication;
 using Microsoft.AspNetCore.Authentication.Cookies;
+using Microsoft.AspNetCore.Authentication.Facebook;
 using Microsoft.AspNetCore.Authentication.Google;
-using Microsoft.AspNetCore.Identity;
 using MongoDB.Driver;
 using Newtonsoft.Json;
 using System.Security.Claims;
-using System.IO;
-using Microsoft.AspNetCore.Mvc;
-using Microsoft.AspNetCore.Authentication.JwtBearer;
-using Microsoft.AspNetCore.Authentication.Facebook;
-using System.Linq.Expressions;
 
 
 namespace Jupeta.Controllers
@@ -28,14 +23,16 @@ namespace Jupeta.Controllers
         private readonly IMongoDBservices _db;
         private readonly ILogger<UserController> _logger;
         private readonly ICacheService _cachedb;
+        private readonly IMongoClient _mongoClient;
 
-        public UserController(IConfiguration config, IMongoDBservices db, ILogger<UserController> logger, ICacheService cachedb)
+        public UserController(IConfiguration config, IMongoDBservices db, ILogger<UserController> logger, ICacheService cachedb, IMongoClient mongoClient)
         {
             _configuration = config;
             _db = db ?? throw new ArgumentNullException(nameof(db));
             _logger = logger;
             _logger.LogInformation("User controller called ");
             _cachedb = cachedb;
+            _mongoClient = mongoClient;
         }
 
         // [Authorize]
@@ -499,11 +496,25 @@ namespace Jupeta.Controllers
 
 
         [AllowAnonymous]
-        [HttpGet("ExternalLogin")]
-        public IActionResult Login()
+        [HttpGet("ExternalLogin/{provider}")]
+        public IActionResult Login(string provider)
         {
-            var props = new AuthenticationProperties { RedirectUri = "api/User/signin-google" };
-            return Challenge(props, GoogleDefaults.AuthenticationScheme);
+            AuthenticationProperties props;
+            switch (provider.ToLower())
+            {
+                case "google":
+                    props = new AuthenticationProperties { RedirectUri = "/api/User/signin-google" };
+                    return Challenge(props, GoogleDefaults.AuthenticationScheme);
+                case "facebook":
+                    props = new AuthenticationProperties { RedirectUri = "/api/User/signin-facebook" };
+                    return Challenge(props, FacebookDefaults.AuthenticationScheme);
+                case "apple":
+                    props = new AuthenticationProperties { RedirectUri = "/api/User/signin-apple" };
+                    return Challenge(props, "Apple");
+                default:
+                    return BadRequest("Invalid provider");
+            }
+
         }
 
         [AllowAnonymous]
@@ -533,13 +544,15 @@ namespace Jupeta.Controllers
                     await _db.AddToExtLogin(provider!, ID!, email!, userId!);
 
                     await _db.CreateToken(email!, userId);
-                    return PhysicalFile(filePath, "text/html");
 
+                    return PhysicalFile(filePath, "text/html");
                 }
 
                 var user = _db.GetUser(email!);
-                await _db.CreateToken(email!, user.Id);
-
+                if (user?.Id != null)
+                {
+                    await _db.CreateToken(email!, user.Id);
+                }
                 // Return the file with a specified content type
                 return PhysicalFile(filePath, "text/html");
             }
@@ -549,43 +562,55 @@ namespace Jupeta.Controllers
                 _logger.LogError(ex.Message);
                 return BadRequest(ResponseHandler.GetExceptionResponse(ex));
             }
-            
+
         }
 
-        [AllowAnonymous]
-        [HttpGet("login-facebook")]
-        public IActionResult FacebookLogin()
-        {
-            var redirectUrl = "/api/User/signin-facebook"; // Redirect URL after Facebook authentication
-            var properties = new AuthenticationProperties { RedirectUri = redirectUrl };
-            return Challenge(properties, FacebookDefaults.AuthenticationScheme);
-        }
-
+        
         [AllowAnonymous]
         [HttpGet("signin-facebook")]
         public async Task<IActionResult> FacebookLoginCallback()
         {
-            var authResult = await HttpContext.AuthenticateAsync(CookieAuthenticationDefaults.AuthenticationScheme);
-            if (authResult?.Principal == null)
+            try
             {
-                // Handle authentication failure
-                return BadRequest();
+                var response = await HttpContext.AuthenticateAsync(CookieAuthenticationDefaults.AuthenticationScheme);
+                if (response.Principal == null) return BadRequest();
+
+                var name = response.Principal.FindFirstValue(ClaimTypes.Name);
+                var givenName = response.Principal.FindFirstValue(ClaimTypes.GivenName);
+                var surName = response.Principal.FindFirstValue(ClaimTypes.Surname);
+                var email = response.Principal.FindFirstValue(ClaimTypes.Email);
+                var ID = response.Principal.FindFirstValue(ClaimTypes.NameIdentifier);
+                var provider = response.Principal?.Identity?.AuthenticationType;
+
+                // Get the physical path to the index.html file
+                var filePath = Path.Combine(Directory.GetCurrentDirectory(), "index.html");
+
+                //Register user with the claims if not onboarded
+                var IsEmail = await _db.UserExists(email!);
+                if (!IsEmail)
+                {
+                    var userId = await _db.AddUserExternal(name!, email!);
+                    await _db.AddToExtLogin(provider!, ID!, email!, userId!);
+
+                    await _db.CreateToken(email!, userId);
+
+                    return PhysicalFile(filePath, "text/html");
+                }
+
+                var user = _db.GetUser(email!);
+                if (user?.Id != null)
+                {
+                    await _db.CreateToken(email!, user.Id);
+                }
+                // Return the file with a specified content type
+                return PhysicalFile(filePath, "text/html");
             }
 
-            // Extract user information from the claims
-            var name = authResult.Principal.FindFirstValue(ClaimTypes.Name);
-            var email = authResult.Principal.FindFirstValue(ClaimTypes.Email);
-
-            // Check if the user already exists
-            var isEmailExists = await _db.UserExists(email);
-            if (!isEmailExists)
+            catch (Exception ex)
             {
-                // If user doesn't exist, add them to the database
-                await _db.AddUserExternal(name, email);
+                _logger.LogError(ex.Message);
+                return BadRequest(ResponseHandler.GetExceptionResponse(ex));
             }
-
-            // Redirect the user to a success page or return some data
-            return Ok("Facebook authentication successful!");
         }
 
         //[HttpPost, Authorize]

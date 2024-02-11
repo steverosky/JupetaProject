@@ -140,14 +140,7 @@ namespace Jupeta.Services
 
         //add External Provider user login
         public async Task AddToExtLogin(string provider, string providerKey, string email, string userId)
-        {
-            //check if email exists
-            var IsEmail = await UserExists(email);
-            if (IsEmail)
-            {
-                throw new Exception("User Already Exists");
-            }
-
+        {            
             var extEmailExists = await _extUsers.Find(p => p.Email == email).AnyAsync();
             if (extEmailExists)
             {
