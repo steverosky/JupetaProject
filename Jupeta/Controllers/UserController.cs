@@ -12,13 +12,13 @@ using System.Security.Claims;
 using System.IO;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.AspNetCore.Authentication.JwtBearer;
-using Amazon.Auth.AccessControlPolicy;
+using Microsoft.AspNetCore.Authentication.Facebook;
 
 
 namespace Jupeta.Controllers
 {
     //[HostAuthentication]
-    [Authorize(AuthenticationSchemes = JwtBearerDefaults.AuthenticationScheme)]
+    //[Authorize(AuthenticationSchemes = JwtBearerDefaults.AuthenticationScheme)]
     [Route("api/[controller]")]
     [ApiController]
     public class UserController : ControllerBase
@@ -540,6 +540,41 @@ namespace Jupeta.Controllers
             return PhysicalFile(filePath, "text/html");
         }
 
+        [AllowAnonymous]
+        [HttpGet("login-facebook")]
+        public IActionResult FacebookLogin()
+        {
+            var redirectUrl = "/api/User/signin-facebook"; // Redirect URL after Facebook authentication
+            var properties = new AuthenticationProperties { RedirectUri = redirectUrl };
+            return Challenge(properties, FacebookDefaults.AuthenticationScheme);
+        }
+
+        [AllowAnonymous]
+        [HttpGet("signin-facebook")]
+        public async Task<IActionResult> FacebookLoginCallback()
+        {
+            var authResult = await HttpContext.AuthenticateAsync(CookieAuthenticationDefaults.AuthenticationScheme);
+            if (authResult?.Principal == null)
+            {
+                // Handle authentication failure
+                return BadRequest();
+            }
+
+            // Extract user information from the claims
+            var name = authResult.Principal.FindFirstValue(ClaimTypes.Name);
+            var email = authResult.Principal.FindFirstValue(ClaimTypes.Email);
+
+            // Check if the user already exists
+            var isEmailExists = await _db.UserExists(email);
+            if (!isEmailExists)
+            {
+                // If user doesn't exist, add them to the database
+                await _db.AddUserExternal(name, email);
+            }
+
+            // Redirect the user to a success page or return some data
+            return Ok("Facebook authentication successful!");
+        }
 
         //[HttpPost, Authorize]
         //[Route("revoke")]
