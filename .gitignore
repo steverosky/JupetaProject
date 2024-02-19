@@ -366,3 +366,4 @@ FodyWeavers.xsd
 /Jupeta/Dockerfile
 *.dockerignore
 /Jupeta/appsettings.json
+/Jupeta/.env
