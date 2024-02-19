@@ -29,7 +29,7 @@ namespace Jupeta.Services
                 RegionEndpoint = region
             };
 
-            _s3 = new AmazonS3Client(accesskey, secretkey, s3Config);
+            _s3 = new AmazonS3Client(accesskey, secretkey, RegionEndpoint.USEast1);
 
         }
 
