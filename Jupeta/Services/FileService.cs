@@ -17,7 +17,7 @@ namespace Jupeta.Services
             _env = env;
             _s3 = s3;
 
-            var region = RegionEndpoint.USEast1;
+            var region = DotNetEnv.Env.GetString("region");
             BucketName = DotNetEnv.Env.GetString("S3_BUCKET_NAME");
             var accesskey = DotNetEnv.Env.GetString("AWS_ACCESS_KEY_ID");
             var secretkey = DotNetEnv.Env.GetString("AWS_SECRET_ACCESS_KEY");
