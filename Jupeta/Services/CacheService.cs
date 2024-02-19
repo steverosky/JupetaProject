@@ -6,11 +6,9 @@ namespace Jupeta.Services
     public class CacheService : ICacheService
     {
         IDatabase _cachedb;
-        IConfiguration _config;
-        public CacheService(IConfiguration config)
+        public CacheService()
         {
-            _config = config;
-            var redisConn = _config.GetValue<string>("redis");
+            var redisConn = DotNetEnv.Env.GetString("redis")!;
             var redis = ConnectionMultiplexer.Connect(redisConn);
             _cachedb = redis.GetDatabase();
             

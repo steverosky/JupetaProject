@@ -44,7 +44,7 @@ namespace Jupeta.Services
                 string body = msg;
                 var smtp = new SmtpClient
                 {
-                    Host = _config.GetValue<string>("mailcatcher"),
+                    Host = DotNetEnv.Env.GetString("mailcatcher"),
                     Port = 1025,
                     EnableSsl = false,
                     DeliveryMethod = SmtpDeliveryMethod.Network,
