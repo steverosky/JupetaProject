@@ -19,37 +19,51 @@ namespace Jupeta.Services
 
             var region = RegionEndpoint.USEast1;
             BucketName = DotNetEnv.Env.GetString("S3_BUCKET_NAME");
-            var accesskey = DotNetEnv.Env.GetString("AWS_ACCESS_KEY_ID");
-            var secretkey = DotNetEnv.Env.GetString("AWS_SECRET_ACCESS_KEY");
+            var accessKey = DotNetEnv.Env.GetString("AWS_ACCESS_KEY_ID");
+            var secretKey = DotNetEnv.Env.GetString("AWS_SECRET_ACCESS_KEY");
 
-            var credentials = new BasicAWSCredentials(accesskey, secretkey);
+            if (string.IsNullOrWhiteSpace(BucketName) || string.IsNullOrWhiteSpace(accessKey) || string.IsNullOrWhiteSpace(secretKey))
+            {
+                throw new InvalidOperationException("AWS configuration values are missing or invalid.");
+            }
+
+            // Create AWS credentials using the access key and secret key
+            var credentials = new BasicAWSCredentials(accessKey, secretKey);
 
             var s3Config = new AmazonS3Config()
             {
                 RegionEndpoint = region
             };
 
-            _s3 = new AmazonS3Client(accesskey, secretkey, RegionEndpoint.USEast1);
-
+            _s3 = new AmazonS3Client(credentials, s3Config);
         }
+
+
 
         //Upload image to aws s3 bucket
         public async Task<PutObjectResponse> UploadImage(Guid id, IFormFile ImageFile)
         {
-            var putObjectRequest = new PutObjectRequest()
+            try
             {
-                BucketName = BucketName,
-                Key = $"product_images/{id}.png",
-                ContentType = ImageFile.ContentType,
-                InputStream = ImageFile.OpenReadStream(),
-                CannedACL = S3CannedACL.PublicRead,
-                Metadata =
+                var putObjectRequest = new PutObjectRequest()
+                {
+                    BucketName = BucketName,
+                    Key = $"product_images/{id}.png",
+                    ContentType = ImageFile.ContentType,
+                    InputStream = ImageFile.OpenReadStream(),
+                    CannedACL = S3CannedACL.PublicRead,
+                    Metadata =
                 {
                     ["x-amz-meta-originalname"] = ImageFile.FileName,
                     ["x-amz-meta-extension"] = Path.GetExtension(ImageFile.FileName)
-                } 
-            };
-            return await _s3.PutObjectAsync(putObjectRequest);
+                }
+                };
+                return await _s3.PutObjectAsync(putObjectRequest);
+            }
+            catch (Exception ex)
+            {
+                throw new Exception(ex.Message);
+            }
         }
 
         //Get image from aws s3 
