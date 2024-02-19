@@ -1,4 +1,5 @@
-﻿using Amazon.Runtime;
+﻿using Amazon;
+using Amazon.Runtime;
 using Amazon.S3;
 using Amazon.S3.Model;
 
@@ -16,6 +17,7 @@ namespace Jupeta.Services
             _env = env;
             _s3 = s3;
 
+            var region = RegionEndpoint.USEast1;
             BucketName = DotNetEnv.Env.GetString("S3_BUCKET_NAME");
             var accesskey = DotNetEnv.Env.GetString("AWS_ACCESS_KEY_ID");
             var secretkey = DotNetEnv.Env.GetString("AWS_SECRET_ACCESS_KEY");
@@ -24,8 +26,9 @@ namespace Jupeta.Services
 
             var s3Config = new AmazonS3Config()
             {
-                RegionEndpoint = Amazon.RegionEndpoint.USEast1
+                RegionEndpoint = region
             };
+
             _s3 = new AmazonS3Client(accesskey, secretkey, s3Config);
 
         }
