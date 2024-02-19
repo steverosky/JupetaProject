@@ -7,13 +7,22 @@ namespace Jupeta.Services
     {
         private readonly IWebHostEnvironment _env;
         private readonly IAmazonS3 _s3;
-        private const string BucketName = "jupetaprojects3";
+        private readonly string BucketName;
         //private string keyName = DateTime.Now.ToString() + ".png";
 
         public FileService(IWebHostEnvironment env, IAmazonS3 s3)
         {
             _env = env;
             _s3 = s3;
+
+            BucketName = DotNetEnv.Env.GetString("S3_BUCKET_NAME");
+
+            var s3Config = new AmazonS3Config()
+            {
+                RegionEndpoint = Amazon.RegionEndpoint.USEast1
+            };
+            _s3 = new AmazonS3Client(s3Config);
+
         }
 
         //Upload image to aws s3 bucket
