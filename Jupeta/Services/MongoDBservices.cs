@@ -1,7 +1,6 @@
 ﻿using Jupeta.Models.DBModels;
 using Jupeta.Models.RequestModels;
 using Jupeta.Models.ResponseModels;
-using Microsoft.AspNetCore.Identity;
 using Microsoft.IdentityModel.Tokens;
 using MongoDB.Driver;
 using Newtonsoft.Json;
@@ -115,8 +114,8 @@ namespace Jupeta.Services
 
         public async Task<bool> UserExists(string email)
         {
-                var exists = await _users.Find(p => p.Email == email).AnyAsync();
-                return exists;
+            var exists = await _users.Find(p => p.Email == email).AnyAsync();
+            return exists;
 
         }
 
@@ -140,7 +139,7 @@ namespace Jupeta.Services
 
         //add External Provider user login
         public async Task AddToExtLogin(string provider, string providerKey, string email, string userId)
-        {            
+        {
             var extEmailExists = await _extUsers.Find(p => p.Email == email).AnyAsync();
             if (extEmailExists)
             {
@@ -276,15 +275,15 @@ namespace Jupeta.Services
             };
 
             var key = new SymmetricSecurityKey(Encoding.UTF8.GetBytes(
-                _config.GetSection("JwtConfig:Secret").Value!));
+                DotNetEnv.Env.GetString("JwtConfig__Secret")!));
 
             var cred = new SigningCredentials(key, SecurityAlgorithms.HmacSha512);
 
             var token = new JwtSecurityToken(
-                 _config["JwtConfig:Issuer"],
-                _config["JwtConfig:Audience"],
+                  DotNetEnv.Env.GetString("JwtConfig__Issuer"),
+               DotNetEnv.Env.GetString("JwtConfig__Audience"),
                 claims: claims,
-                expires: DateTime.UtcNow.AddSeconds(double.Parse(_config.GetSection("JwtConfig:Expires").Value!)),
+                expires: DateTime.UtcNow.AddSeconds(double.Parse(DotNetEnv.Env.GetString("JwtConfig__Expires")!)),
                 signingCredentials: cred
                 );
 
@@ -658,7 +657,7 @@ namespace Jupeta.Services
 
             //retrieve otp from cache
             var cacheOTP = _cachedb.GetData<string>(email);
-            if (cacheOTP == null) 
+            if (cacheOTP == null)
             {
                 throw new Exception("Something went wrong. Retry the OTP generation");
             }

@@ -19,13 +19,33 @@ using Microsoft.AspNetCore.Authentication.Cookies;
 
 var builder = WebApplication.CreateBuilder(args);
 
+
+DotNetEnv.Env.Load();
+
+var JwtAudience = DotNetEnv.Env.GetString("JwtConfig__Audience");
+var dbString = DotNetEnv.Env.GetString("MongoDB__ConnectionURL");
+var JwtIssuer = DotNetEnv.Env.GetString("JwtConfig__Issuer");
+var secretKey = DotNetEnv.Env.GetString("JwtConfig__Secret")!;
+
+
+if (string.IsNullOrEmpty(dbString) || string.IsNullOrEmpty(secretKey) || string.IsNullOrEmpty(JwtIssuer) || string.IsNullOrEmpty(JwtAudience))
+{
+    Console.WriteLine("Provide all values for environment variables");
+    return;
+}
+
 //Mongodb setup
-builder.Services.Configure<MongoDBSettings>(builder.Configuration.GetSection(nameof(MongoDB)));
-builder.Services.AddSingleton<IMongoDBSettings>(sp =>
-    sp.GetRequiredService<IOptions<MongoDBSettings>>().Value);
+var mongoDBSettings = new MongoDBSettings
+{
+    ConnectionURI = Environment.GetEnvironmentVariable("MongoDB__ConnectionURL")!,
+    DatabaseName = Environment.GetEnvironmentVariable("MongoDB__DatabaseName")!
+};
+
+builder.Services.AddSingleton<IMongoDBSettings>(sp => mongoDBSettings);
+
 
 builder.Services.AddSingleton<IMongoClient>(s
-    => new MongoClient(builder.Configuration.GetValue<string>("MongoDB:ConnectionURL")));
+    => new MongoClient(dbString));
 
 //add CORS policy
 builder.Services.AddCors(options =>
@@ -52,7 +72,7 @@ builder.Services.AddCors(options =>
 
 builder.Services.AddHttpClient();
 
-var key = Encoding.UTF8.GetBytes(builder.Configuration["JwtConfig:Secret"]!);
+var key = Encoding.UTF8.GetBytes(secretKey!);
 
 //var RefreshTokenValidationParameter = new TokenValidationParameters
 //{
@@ -112,13 +132,13 @@ builder.Services.AddAuthentication(options =>
 })
 .AddGoogle(options =>
 {
-    options.ClientId = builder.Configuration["GoogleSigninConfig:ClientId"]!;
-    options.ClientSecret = builder.Configuration["GoogleSigninConfig:ClientSecret"]!;
+    options.ClientId = Environment.GetEnvironmentVariable("GoogleSigninConfig__ClientId")!;
+    options.ClientSecret = Environment.GetEnvironmentVariable("GoogleSigninConfig__ClientSecret")!;
 })
 .AddFacebook(options =>
 {
-    options.AppId = builder.Configuration["FacebookSigninConfig:AppId"]!;
-    options.AppSecret = builder.Configuration["FacebookSigninConfig:AppSecret"]!;
+    options.AppId = Environment.GetEnvironmentVariable("FacebookSigninConfig__AppId")!;
+    options.AppSecret = Environment.GetEnvironmentVariable("FacebookSigninConfig__AppSecret")!;
 });
 
 // Add services to the container.
@@ -163,9 +183,13 @@ builder.Services.AddSession(options =>
 });
 
 //add email service
-var emailConfig = builder.Configuration
-        .GetSection("EmailConfiguration")
-        .Get<EmailConfiguration>();
+var emailConfig = new EmailConfiguration
+{
+    From = Environment.GetEnvironmentVariable("EmailConfiguration__From")!,
+    DisplayName = Environment.GetEnvironmentVariable("EmailConfiguration__DisplayName")!,
+    Password = Environment.GetEnvironmentVariable("EmailConfiguration__Password")!
+};
+
 builder.Services.AddSingleton(emailConfig);
 
 
