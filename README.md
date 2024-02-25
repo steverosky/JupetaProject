@@ -1,5 +1,5 @@
 # Jupeta
-An all-in-one ecommerce and live auction website, built with Asp.NET for backend and React for frontend. It will be featuring real-time bidding, secure transactions, and a wide range of features tailored for both buyers and sellers. 
+An all-in-one ecommerce and live auction website, built with Asp.NET for backend and React for frontend. It will be featuring real-time bidding, secure transactions, and a wide range of features tailored for both buyers and sellers..
 
 ### For Contribution To The Project:
 - Fork the project(Click the fork icon on Github)
